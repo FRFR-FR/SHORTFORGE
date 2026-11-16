@@ -1,0 +1,63 @@
+{
+  "title": "Untitled original short",
+  "description": "Replace this with the original premise and production notes.",
+  "duration_seconds": 30,
+  "fps": 30,
+  "width": 720,
+  "height": 1280,
+  "quality": "preview",
+  "style_bible": "config/style-bible.json",
+  "narration_text": "",
+  "captions_file": "",
+  "kokoro_voice": "am_michael",
+  "render": {
+    "engine": "BLENDER_EEVEE",
+    "samples": 64,
+    "crf": 18,
+    "preset": "medium"
+  },
+  "story": {
+    "hook": "Write a concise original opening hook.",
+    "beats": [
+      "Establish the setting and protagonist.",
+      "Introduce a clear visual complication.",
+      "Escalate with purposeful movement and readable staging.",
+      "Deliver a visual payoff and clean ending."
+    ]
+  },
+  "character": {
+    "name": "Pip",
+    "primary_color": [
+      0.12,
+      0.48,
+      0.78,
+      1.0
+    ],
+    "accent_color": [
+      1.0,
+      0.58,
+      0.12,
+      1.0
+    ]
+  },
+  "shots": [
+    {
+      "start_seconds": 0,
+      "duration_seconds": 3,
+      "camera": "wide",
+      "purpose": "Establish the town and protagonist"
+    },
+    {
+      "start_seconds": 3,
+      "duration_seconds": 4,
+      "camera": "push_in",
+      "purpose": "Move closer as the protagonist accelerates"
+    },
+    {
+      "start_seconds": 7,
+      "duration_seconds": 23,
+      "camera": "close",
+      "purpose": "Finish on a readable character beat"
+    }
+  ]
+}

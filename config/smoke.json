@@ -1,0 +1,62 @@
+{
+  "title": "SHORTFORGE ten-second smoke test",
+  "description": "A short animated character beat in an original stylized town.",
+  "duration_seconds": 10,
+  "fps": 30,
+  "width": 540,
+  "height": 960,
+  "quality": "smoke",
+  "style_bible": "config/style-bible.json",
+  "narration_text": "",
+  "captions_file": "",
+  "kokoro_voice": "am_michael",
+  "render": {
+    "engine": "BLENDER_EEVEE",
+    "samples": 32,
+    "crf": 19,
+    "preset": "veryfast"
+  },
+  "story": {
+    "hook": "A tiny character races through a bright, handcrafted city.",
+    "beats": [
+      "Open on a moving camera and a clear character silhouette.",
+      "The character runs toward camera as the town passes behind.",
+      "Finish on a readable pose with room for a closing caption."
+    ]
+  },
+  "character": {
+    "name": "Pip",
+    "primary_color": [
+      0.12,
+      0.48,
+      0.78,
+      1.0
+    ],
+    "accent_color": [
+      1.0,
+      0.58,
+      0.12,
+      1.0
+    ]
+  },
+  "shots": [
+    {
+      "start_seconds": 0,
+      "duration_seconds": 3,
+      "camera": "wide",
+      "purpose": "Establish the town and protagonist"
+    },
+    {
+      "start_seconds": 3,
+      "duration_seconds": 4,
+      "camera": "push_in",
+      "purpose": "Move closer as the protagonist accelerates"
+    },
+    {
+      "start_seconds": 7,
+      "duration_seconds": 3,
+      "camera": "close",
+      "purpose": "Finish on a readable character beat"
+    }
+  ]
+}

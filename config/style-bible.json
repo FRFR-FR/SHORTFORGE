@@ -1,0 +1,23 @@
+{
+  "name": "SHORTFORGE crafted 3D short",
+  "visual_identity": "Original stylized 3D characters and tactile miniature environments; clean silhouettes; expressive but restrained facial features.",
+  "palette": {
+    "sky": "soft clear blue",
+    "ground": "warm neutral stone",
+    "primary": "deep cyan-blue",
+    "accent": "warm amber",
+    "shadow": "cool blue-grey"
+  },
+  "lighting": "Large soft key light, gentle fill, visible contact shadows and a subtle rim light. Avoid flat unlit scenes.",
+  "camera": "Vertical 9:16 framing, strong foreground/midground/background separation, motivated dolly or pan, stable horizon and readable headroom.",
+  "motion": "Anticipation before major actions, clear silhouettes, grounded foot contacts, weight shifts, overlapping follow-through, no teleporting or sliding.",
+  "editing": "A clear first-second hook; purposeful visual change every 2–4 seconds; avoid arbitrary cuts and filler shots.",
+  "materials": "Matte painted surfaces with controlled roughness, subtle variation and no trademarked designs.",
+  "text": "Reserve uncluttered negative space for captions added in post; never bake long paragraphs into the 3D scene.",
+  "sound": "Dialogue and purposeful diegetic effects only by default; no background music unless explicitly requested.",
+  "originality_rules": [
+    "Design original characters and environments.",
+    "Never trace or reconstruct a competitor's distinctive character, shot order, script or art.",
+    "Use only owned, public-domain or properly licensed external media."
+  ]
+}
