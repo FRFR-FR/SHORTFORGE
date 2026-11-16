@@ -304,3 +304,57 @@ def avatar_library_manifest():
         "rig": "65-bone humanoid skeleton",
         "notes": "Each .blend includes a skinned humanoid, facial expression controls and stored JSON pose/emotion presets. Poses are applied with SHORTFORGE avatar_system.apply_pose().",
     }
+
+
+
+def load_avatar_blend(blend_path, avatar_id, location=(0.0, 0.0, 0.0), rotation_z=0.0, scale=1.0):
+    """Instantiate a previously built reusable avatar .blend into the current scene."""
+    path = Path(blend_path).resolve()
+    if not path.is_file():
+        raise FileNotFoundError(f"Reusable avatar .blend not found: {path}")
+    with bpy.data.libraries.load(str(path), link=False) as (data_from, data_to):
+        data_to.objects = list(data_from.objects)
+    imported = [obj for obj in data_to.objects if obj is not None]
+    if not imported:
+        raise RuntimeError(f"No objects were found inside reusable avatar file {path}")
+    for obj in imported:
+        if obj.name not in bpy.context.scene.objects:
+            bpy.context.scene.collection.objects.link(obj)
+    root = next((obj for obj in imported if obj.get("shortforge_avatar")), None)
+    armature = next((obj for obj in imported if obj.type == "ARMATURE" and obj.get("shortforge_avatar_id")), None)
+    if root is None or armature is None:
+        raise RuntimeError(f"Reusable avatar file {path} is missing its root or rig metadata")
+    root.location = Vector(location)
+    root.rotation_euler.z = math.radians(rotation_z)
+    root.scale = (scale, scale, scale)
+
+    shaped = [obj for obj in imported if obj.type == "MESH" and obj.data.shape_keys]
+    brow_obj = next((obj for obj in shaped if "brow" in obj.name.lower() or obj.name.lower() == "face"), None)
+    eye_obj = next((obj for obj in shaped if "eye" in obj.name.lower() or obj.name.lower() == "face.001"), None)
+    if brow_obj is None and shaped:
+        brow_obj = shaped[0]
+    if eye_obj is None:
+        eye_obj = next((obj for obj in shaped if obj != brow_obj), brow_obj)
+
+    def keys_for(obj):
+        if obj is None or not obj.data.shape_keys:
+            return {}
+        result = {}
+        for key in obj.data.shape_keys.key_blocks:
+            if key.name.startswith("emotion_"):
+                result[key.name[len("emotion_"):]] = key
+        return result
+
+    mouths = {str(obj.get("emotion")): obj for obj in imported if obj.type == "CURVE" and obj.get("emotion")}
+    avatar = {
+        "root": root,
+        "armature": armature,
+        "imported": imported,
+        "brow_keys": keys_for(brow_obj),
+        "eye_keys": keys_for(eye_obj),
+        "mouths": mouths,
+    }
+    if not mouths:
+        raise RuntimeError(f"Reusable avatar {avatar_id} has no saved mouth emotion curves")
+    root["shortforge_avatar"] = avatar_id
+    return avatar
