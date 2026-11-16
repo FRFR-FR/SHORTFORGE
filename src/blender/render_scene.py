@@ -1,8 +1,4 @@
-"""Build and render an original procedural short with Blender's native renderer.
-
-This script intentionally uses only bpy + Python's standard library. It does not
-require NumPy, GLB export, Node, Chromium, Remotion or network access.
-"""
+"""Render a cinematic vertical short in a prebuilt Blender environment."""
 from __future__ import annotations
 import argparse
 import json
@@ -14,6 +10,10 @@ from pathlib import Path
 import bpy
 from mathutils import Vector
 
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+from avatar_system import add_rigged_avatar, animate_avatar
+
 
 def parse_args():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
@@ -24,320 +24,189 @@ def parse_args():
     return parser.parse_args(argv)
 
 
-def rgba(value, fallback):
-    if isinstance(value, list) and len(value) == 4:
-        return tuple(float(max(0.0, min(1.0, x))) for x in value)
-    return fallback
+def set_engine_and_quality(scene, config):
+    engines = {item.identifier for item in bpy.types.RenderSettings.bl_rna.properties["engine"].enum_items}
+    if "BLENDER_EEVEE_NEXT" in engines:
+        scene.render.engine = "BLENDER_EEVEE_NEXT"
+    elif "BLENDER_EEVEE" in engines:
+        scene.render.engine = "BLENDER_EEVEE"
+    else:
+        raise RuntimeError("SHORTFORGE requires Blender Eevee Next or Eevee for its final renderer")
+    scene.render.resolution_x = int(config["width"])
+    scene.render.resolution_y = int(config["height"])
+    scene.render.resolution_percentage = 100
+    scene.render.fps = int(config["fps"])
+    scene.render.image_settings.file_format = "PNG"
+    scene.render.image_settings.color_mode = "RGB"
+    scene.render.image_settings.color_depth = "8"
+    scene.render.film_transparent = False
+    scene.render.use_file_extension = True
+    scene.render.threads_mode = "FIXED"
+    scene.render.threads = max(1, min(4, os.cpu_count() or 2))
+    if hasattr(scene, "eevee_next") and hasattr(scene.eevee_next, "taa_render_samples"):
+        scene.eevee_next.taa_render_samples = int(config.get("render", {}).get("samples", 64))
+    if hasattr(scene, "eevee") and hasattr(scene.eevee, "taa_render_samples"):
+        scene.eevee.taa_render_samples = int(config.get("render", {}).get("samples", 64))
+    # AgX preserves highlight detail in HDR environments and emissive practicals.
+    transforms = {item.name for item in scene.view_settings.bl_rna.properties["view_transform"].enum_items}
+    if "AgX" in transforms:
+        scene.view_settings.view_transform = "AgX"
+    scene.view_settings.exposure = float(config.get("render", {}).get("exposure", 0.0))
+    scene.view_settings.gamma = 1.0
+    scene.render.filepath = "//"
 
 
-def material(name, color, roughness=0.78, metallic=0.0):
-    mat = bpy.data.materials.new(name=name)
-    mat.diffuse_color = color
-    mat.use_nodes = True
-    bsdf = mat.node_tree.nodes.get("Principled BSDF")
-    if bsdf:
-        bsdf.inputs["Base Color"].default_value = color
-        bsdf.inputs["Roughness"].default_value = roughness
-        bsdf.inputs["Metallic"].default_value = metallic
-    return mat
+def add_area_light(name, location, target, energy, color, size):
+    bpy.ops.object.light_add(type="AREA", location=location)
+    light = bpy.context.object
+    light.name = name
+    light.data.energy = energy
+    light.data.shape = "DISK"
+    light.data.size = size
+    light.data.color = color
+    light.rotation_euler = (Vector(target) - light.location).to_track_quat("-Z", "Y").to_euler()
+    return light
 
 
-def assign(obj, mat):
-    if mat:
-        obj.data.materials.append(mat)
-    return obj
-
-
-def bevel(obj, amount=0.12, segments=3):
-    mod = obj.modifiers.new("Soft crafted edges", "BEVEL")
-    mod.width = amount
-    mod.segments = segments
-    obj.modifiers.new("Weighted corner normals", "WEIGHTED_NORMAL")
-    return obj
-
-
-def cube(name, location, scale, mat, bevel_amount=0.0):
-    bpy.ops.mesh.primitive_cube_add(size=1, location=location)
-    obj = bpy.context.object
-    obj.name = name
-    obj.dimensions = scale
-    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
-    assign(obj, mat)
-    if bevel_amount:
-        bevel(obj, bevel_amount)
-    return obj
-
-
-def sphere(name, location, scale, mat, segments=20, rings=12):
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=segments, ring_count=rings, radius=1, location=location)
-    obj = bpy.context.object
-    obj.name = name
-    obj.scale = scale
-    assign(obj, mat)
-    bpy.ops.object.shade_smooth()
-    return obj
-
-
-def cone(name, location, radius, depth, mat):
-    bpy.ops.mesh.primitive_cone_add(vertices=12, radius1=radius, radius2=0.0, depth=depth, location=location)
-    obj = bpy.context.object
-    obj.name = name
-    assign(obj, mat)
-    bevel(obj, 0.04, 2)
-    return obj
-
-
-def parent_local(obj, parent, location):
-    obj.parent = parent
-    obj.location = location
-    return obj
-
-
-def set_linear(obj):
-    if not obj.animation_data or not obj.animation_data.action:
-        return
-    for fcurve in obj.animation_data.action.fcurves:
-        for key in fcurve.keyframe_points:
-            key.interpolation = "BEZIER" if "rotation_euler" in fcurve.data_path else "LINEAR"
-
-
-def create_tree(x, y, ground_mat, trunk_mat, leaf_mat, size=1.0):
-    cube("Tree trunk", (x, y, 0.68 * size), (0.22 * size, 0.22 * size, 1.35 * size), trunk_mat, 0.04)
-    sphere("Tree crown lower", (x, y, 1.5 * size), (0.72 * size, 0.65 * size, 0.72 * size), leaf_mat)
-    sphere("Tree crown upper", (x + 0.12 * size, y, 1.95 * size), (0.48 * size, 0.45 * size, 0.52 * size), leaf_mat)
-
-
-def build_environment(mats):
-    ground = mats["ground"]
-    road = mats["road"]
-    sidewalk = mats["sidewalk"]
-    building_mats = mats["buildings"]
-    window = mats["window"]
-    trunk = mats["trunk"]
-    leaf = mats["leaf"]
-    lane = mats["lane"]
-
-    cube("Ground", (0, 2, -0.22), (28, 36, 0.4), ground)
-    cube("Road", (0, -0.2, 0.005), (28, 7.2, 0.08), road)
-    cube("Far sidewalk", (0, 3.65, 0.07), (28, 1.2, 0.16), sidewalk, 0.08)
-    cube("Near sidewalk", (0, -4.05, 0.07), (28, 1.2, 0.16), sidewalk, 0.08)
-    for x in range(-12, 13, 3):
-        cube("Road dash", (x, -0.2, 0.06), (1.35, 0.13, 0.035), lane, 0.02)
-
-    for index, x in enumerate([-10, -5.2, 0, 5.2, 10]):
-        width = 3.8 if index % 2 else 4.2
-        height = [5.4, 6.5, 5.8, 7.0, 5.2][index]
-        depth = 2.1
-        y = 6.5
-        bmat = building_mats[index % len(building_mats)]
-        cube(f"Town building {index + 1}", (x, y, height / 2), (width, depth, height), bmat, 0.12)
-        # Repeating window grids are generated deterministically, not imported assets.
-        cols = max(2, int(width / 0.9))
-        rows = max(2, int(height / 1.05) - 1)
-        for row in range(rows):
-            for col in range(cols):
-                wx = x - width / 2 + (col + 0.5) * width / cols
-                wz = 0.85 + row * 1.05
-                cube("Window", (wx, y - depth / 2 - 0.018, wz), (0.42, 0.045, 0.55), window, 0.025)
-
-    for x in [-8.2, -3.0, 3.0, 8.2]:
-        create_tree(x, 3.8, ground, trunk, leaf, 0.9 if abs(x) > 7 else 0.75)
-
-    # A compact moving car adds a second layer of motion behind the protagonist.
-    car_root = bpy.data.objects.new("Moving car root", None)
-    bpy.context.collection.objects.link(car_root)
-    car_body = cube("Car body", (0, 0, 0), (1.55, 0.78, 0.46), mats["car"], 0.13)
-    parent_local(car_body, car_root, (0, 0, 0.45))
-    cabin = cube("Car cabin", (0, 0, 0), (0.83, 0.68, 0.42), mats["glass"], 0.12)
-    parent_local(cabin, car_root, (-0.08, 0, 0.82))
-    for wheel_x in [-0.48, 0.48]:
-        for wheel_y in [-0.34, 0.34]:
-            wheel = sphere("Car wheel", (0, 0, 0), (0.19, 0.12, 0.19), mats["tire"], 16, 8)
-            parent_local(wheel, car_root, (wheel_x, wheel_y, 0.2))
-    car_root.location = (-10.5, 1.7, 0)
-    car_root.keyframe_insert(data_path="location", frame=1)
-    car_root.location = (10.5, 1.7, 0)
-    car_root.keyframe_insert(data_path="location", frame=301)
-    set_linear(car_root)
-
-
-def create_character(config, mats, total_frames):
-    character = config.get("character", {})
-    primary = material("Character primary", rgba(character.get("primary_color"), (0.12, 0.48, 0.78, 1)))
-    accent = material("Character accent", rgba(character.get("accent_color"), (1.0, 0.58, 0.12, 1)))
-    skin = mats["skin"]
-    dark = mats["dark"]
-    white = mats["white"]
-
-    root = bpy.data.objects.new("Character root", None)
-    bpy.context.collection.objects.link(root)
-
-    torso = cube("Character torso", (0, 0, 0), (0.74, 0.48, 0.86), primary, 0.16)
-    parent_local(torso, root, (0, 0, 1.48))
-    head = sphere("Character head", (0, 0, 0), (0.47, 0.43, 0.48), skin)
-    parent_local(head, root, (0, -0.015, 2.32))
-    hair = sphere("Hair cap", (0, 0, 0), (0.49, 0.44, 0.24), dark)
-    parent_local(hair, root, (0, 0.005, 2.63))
-    # Eyes are placed on the camera-facing side of the head.
-    for eye_x in [-0.16, 0.16]:
-        eye = sphere("Eye white", (0, 0, 0), (0.075, 0.045, 0.105), white, 16, 8)
-        parent_local(eye, root, (eye_x, -0.405, 2.34))
-        pupil = sphere("Eye pupil", (0, 0, 0), (0.035, 0.024, 0.055), dark, 16, 8)
-        parent_local(pupil, root, (eye_x, -0.448, 2.33))
-    mouth = sphere("Mouth", (0, 0, 0), (0.09, 0.025, 0.025), dark, 16, 8)
-    parent_local(mouth, root, (0, -0.433, 2.12))
-
-    # Joint empties make limbs animatable without a fragile external rig dependency.
-    limbs = []
-    for side, x in [("L", -0.43), ("R", 0.43)]:
-        arm_pivot = bpy.data.objects.new(f"Arm {side} pivot", None)
-        bpy.context.collection.objects.link(arm_pivot)
-        parent_local(arm_pivot, root, (x, 0, 1.82))
-        arm = sphere(f"Arm {side}", (0, 0, 0), (0.145, 0.16, 0.46), primary)
-        parent_local(arm, arm_pivot, (0, 0, -0.38))
-        hand = sphere(f"Hand {side}", (0, 0, 0), (0.15, 0.15, 0.15), skin)
-        parent_local(hand, arm_pivot, (0, -0.015, -0.76))
-        limbs.append((arm_pivot, 1 if side == "L" else -1))
-
-    for side, x in [("L", -0.20), ("R", 0.20)]:
-        leg_pivot = bpy.data.objects.new(f"Leg {side} pivot", None)
-        bpy.context.collection.objects.link(leg_pivot)
-        parent_local(leg_pivot, root, (x, 0, 1.08))
-        leg = sphere(f"Leg {side}", (0, 0, 0), (0.18, 0.19, 0.46), accent)
-        parent_local(leg, leg_pivot, (0, 0, -0.36))
-        shoe = sphere(f"Shoe {side}", (0, 0, 0), (0.18, 0.28, 0.15), dark)
-        parent_local(shoe, leg_pivot, (0, -0.12, -0.72))
-        limbs.append((leg_pivot, -1 if side == "L" else 1))
-
-    # One-second run cycle, repeated over the whole 30 fps timeline.
-    cycle_frames = [0, 7, 15, 22, 30]
-    cycle_angles = [0.72, 0.0, -0.72, 0.0, 0.72]
-    for pivot, direction in limbs:
-        for frame, angle in zip(cycle_frames, cycle_angles):
-            pivot.rotation_euler[0] = angle * direction
-            pivot.keyframe_insert(data_path="rotation_euler", index=0, frame=frame)
-        if pivot.animation_data and pivot.animation_data.action:
-            for curve in pivot.animation_data.action.fcurves:
-                modifier = curve.modifiers.new(type="CYCLES")
-                modifier.mode_before = "REPEAT"
-                modifier.mode_after = "REPEAT"
-
-    for frame, z in [(1, 0.0), (8, 0.10), (16, 0.0), (23, 0.10), (30, 0.0)]:
-        root.location.z = z
-        root.keyframe_insert(data_path="location", index=2, frame=frame)
-    root.location.x = -0.45
-    root.keyframe_insert(data_path="location", index=0, frame=1)
-    root.location.x = 0.45
-    root.keyframe_insert(data_path="location", index=0, frame=total_frames)
-    set_linear(root)
-    if root.animation_data and root.animation_data.action:
-        for curve in root.animation_data.action.fcurves:
-            if curve.data_path == "location" and curve.array_index == 2:
-                modifier = curve.modifiers.new(type="CYCLES")
-                modifier.mode_before = "REPEAT"
-                modifier.mode_after = "REPEAT"
-    return root
-
-
-def setup_camera(scene, total_frames, config):
-    bpy.ops.object.camera_add(location=(0, -13.2, 4.2))
+def create_camera(scene, project, avatar_root, total_frames):
+    character = project.get("character", {})
+    spawn = Vector(character.get("position", [0.0, 0.0, 0.0]))
+    aim_height = float(character.get("camera_aim_height", 1.18))
+    target = spawn + Vector((0.0, 0.0, aim_height))
+    bpy.ops.object.camera_add(location=target + Vector((0.0, -8.0, 3.0)))
     camera = bpy.context.object
-    camera.name = "Vertical cinematic camera"
-    target = Vector((0, 1.1, 2.0))
-    camera.rotation_euler = (target - camera.location).to_track_quat("-Z", "Y").to_euler()
-    camera.data.lens = 47
-    camera.data.sensor_width = 36
+    camera.name = "SHORTFORGE vertical cinema camera"
+    camera.data.lens = 52
+    camera.data.sensor_fit = "VERTICAL"
+    camera.data.sensor_height = 24
+    camera.data.clip_start = 0.05
+    camera.data.clip_end = 1000.0
     scene.camera = camera
+
     profiles = {
-        "wide": ((0.0, -15.5, 5.0), 41.0),
-        "push_in": ((0.1, -11.5, 4.35), 51.0),
-        "close": ((0.0, -9.7, 3.45), 61.0),
-        "side": ((3.2, -12.0, 4.25), 49.0),
-        "low": ((0.0, -13.0, 3.05), 48.0),
+        "wide": (Vector((0.0, -10.2, 4.0)), 45.0),
+        "push_in": (Vector((0.0, -8.2, 3.4)), 52.0),
+        "close": (Vector((0.0, -6.5, 2.7)), 62.0),
+        "side": (Vector((4.1, -7.6, 3.25)), 52.0),
+        "low": (Vector((0.0, -8.8, 2.15)), 48.0),
     }
-    shots = config.get("shots") or [{"start_seconds": 0, "duration_seconds": total_frames / scene.render.fps, "camera": "wide"}]
+    shots = project.get("shots") or [{
+        "start_seconds": 0,
+        "duration_seconds": total_frames / scene.render.fps,
+        "camera": "wide",
+    }]
     for shot in shots:
-        start_frame = max(1, int(float(shot.get("start_seconds", 0)) * scene.render.fps) + 1)
-        end_frame = min(total_frames, start_frame + int(float(shot.get("duration_seconds", 1)) * scene.render.fps) - 1)
-        location, lens = profiles.get(shot.get("camera", "wide"), profiles["wide"])
-        camera.location = location
-        target = Vector((0, 1.1, 2.0))
-        camera.rotation_euler = (target - camera.location).to_track_quat("-Z", "Y").to_euler()
+        start = max(1, int(float(shot.get("start_seconds", 0)) * scene.render.fps) + 1)
+        end = min(total_frames, start + int(float(shot.get("duration_seconds", 1)) * scene.render.fps) - 1)
+        offset, lens = profiles.get(shot.get("camera", "wide"), profiles["wide"])
+        shot_target = target + Vector(shot.get("camera_target_offset", [0.0, 0.0, 0.0]))
+        camera.location = shot_target + offset
+        camera.rotation_euler = (shot_target - camera.location).to_track_quat("-Z", "Y").to_euler()
         camera.data.lens = lens
-        camera.keyframe_insert(data_path="location", frame=start_frame)
-        camera.keyframe_insert(data_path="rotation_euler", frame=start_frame)
-        camera.data.keyframe_insert(data_path="lens", frame=start_frame)
-        # A restrained drift within each shot prevents static slideshow framing.
-        camera.location.x += 0.12 if shot.get("camera") != "side" else -0.12
-        camera.keyframe_insert(data_path="location", frame=end_frame)
-        camera.keyframe_insert(data_path="rotation_euler", frame=end_frame)
-        camera.data.keyframe_insert(data_path="lens", frame=end_frame)
-    set_linear(camera)
+        camera.keyframe_insert(data_path="location", frame=start)
+        camera.keyframe_insert(data_path="rotation_euler", frame=start)
+        camera.data.keyframe_insert(data_path="lens", frame=start)
+        # Small motivated tracking drift gives each shot life without handheld wobble.
+        drift = float(shot.get("camera_drift", 0.14))
+        camera.location.x += drift
+        camera.location.z += drift * 0.18
+        camera.rotation_euler = (shot_target - camera.location).to_track_quat("-Z", "Y").to_euler()
+        camera.keyframe_insert(data_path="location", frame=end)
+        camera.keyframe_insert(data_path="rotation_euler", frame=end)
+        camera.data.keyframe_insert(data_path="lens", frame=end)
+
     if camera.animation_data and camera.animation_data.action:
         for curve in camera.animation_data.action.fcurves:
             for key in curve.keyframe_points:
                 key.interpolation = "BEZIER"
+                key.handle_left_type = "AUTO_CLAMPED"
+                key.handle_right_type = "AUTO_CLAMPED"
 
-    # Custom title card, kept in the 3D scene for a fully local render.
-    title = bpy.data.curves.new("Short title", type="FONT")
-    title.body = str(config.get("title", "SHORTFORGE")).upper()[:28]
-    title.align_x = "CENTER"
-    title.size = 0.28 if len(title.body) > 18 else 0.36
-    title.extrude = 0.004
-    text_obj = bpy.data.objects.new("Short title", title)
-    bpy.context.collection.objects.link(text_obj)
-    text_obj.location = (0, -0.55, 4.55)
-    text_obj.rotation_euler = (math.radians(90), 0, 0)
-    title_mat = material("Title cream", (1.0, 0.94, 0.78, 1.0))
-    assign(text_obj, title_mat)
-
-
-def create_lighting(scene):
-    world = bpy.data.worlds.new("Soft blue studio") if not bpy.data.worlds else bpy.data.worlds[0]
-    scene.world = world
-    world.use_nodes = True
-    world.node_tree.nodes["Background"].inputs["Color"].default_value = (0.25, 0.39, 0.56, 1)
-    world.node_tree.nodes["Background"].inputs["Strength"].default_value = 0.55
-
-    bpy.ops.object.light_add(type="AREA", location=(-5, -7, 10))
-    key = bpy.context.object
-    key.name = "Large soft key"
-    key.data.energy = 1700
-    key.data.shape = "DISK"
-    key.data.size = 8
-    key.rotation_euler = (math.radians(24), 0, math.radians(-26))
-
-    bpy.ops.object.light_add(type="AREA", location=(5, 1, 7))
-    rim = bpy.context.object
-    rim.name = "Warm rim light"
-    rim.data.energy = 900
-    rim.data.size = 6
-    rim.data.color = (1.0, 0.72, 0.45)
-    rim.rotation_euler = (math.radians(18), 0, math.radians(145))
+    # Camera-parented title cards stay perfectly framed through every camera move.
+    font = bpy.data.curves.new("SHORTFORGE title typography", type="FONT")
+    font.body = str(project.get("title", "SHORTFORGE")).upper()[:36]
+    font.align_x = "CENTER"
+    font.size = 0.34 if len(font.body) > 18 else 0.43
+    font.extrude = 0.001
+    text_obj = bpy.data.objects.new("SHORTFORGE title overlay", font)
+    scene.collection.objects.link(text_obj)
+    text_obj.parent = camera
+    text_obj.location = (0.0, 2.35, -8.0)
+    text_obj.rotation_euler = (0.0, 0.0, 0.0)
+    title_mat = bpy.data.materials.new("Title warm ivory")
+    title_mat.diffuse_color = (1.0, 0.91, 0.70, 1.0)
+    title_mat.use_nodes = True
+    bsdf = title_mat.node_tree.nodes.get("Principled BSDF")
+    if bsdf:
+        bsdf.inputs["Base Color"].default_value = (1.0, 0.91, 0.70, 1.0)
+        bsdf.inputs["Emission Color"].default_value = (1.0, 0.67, 0.28, 1.0)
+        bsdf.inputs["Emission Strength"].default_value = 0.7
+    font.materials.append(title_mat)
+    text_obj.hide_render = False
+    text_obj.keyframe_insert(data_path="location", frame=1)
+    text_obj.location.y += 0.18
+    text_obj.keyframe_insert(data_path="location", frame=42)
+    text_obj.location.y -= 0.18
+    text_obj.keyframe_insert(data_path="location", frame=60)
+    return camera
 
 
-def make_materials():
-    return {
-        "ground": material("Warm stone ground", (0.54, 0.52, 0.46, 1)),
-        "road": material("Deep asphalt", (0.10, 0.15, 0.21, 1)),
-        "sidewalk": material("Pale sidewalk", (0.72, 0.69, 0.61, 1)),
-        "buildings": [
-            material("Building coral", (0.74, 0.36, 0.28, 1)),
-            material("Building teal", (0.24, 0.50, 0.54, 1)),
-            material("Building sand", (0.78, 0.62, 0.40, 1)),
-            material("Building lavender", (0.48, 0.43, 0.61, 1)),
-        ],
-        "window": material("Window blue glass", (0.22, 0.45, 0.58, 1), 0.25, 0.1),
-        "trunk": material("Tree bark", (0.28, 0.18, 0.12, 1)),
-        "leaf": material("Tree green", (0.20, 0.43, 0.25, 1)),
-        "lane": material("Lane paint", (0.95, 0.83, 0.55, 1)),
-        "car": material("Car amber", (0.92, 0.31, 0.12, 1), 0.32),
-        "glass": material("Car glass", (0.15, 0.34, 0.43, 1), 0.22),
-        "tire": material("Tire", (0.035, 0.045, 0.055, 1)),
-        "skin": material("Character warm skin", (0.83, 0.58, 0.39, 1)),
-        "dark": material("Character dark details", (0.10, 0.12, 0.16, 1)),
-        "white": material("Eye white", (0.96, 0.96, 0.91, 1)),
-    }
+def create_story_prop(scene, character_root, total_frames, fps):
+    # A small original emissive practical is the story's visual focal point.
+    emission = bpy.data.materials.new("Last light | warm emissive core")
+    emission.diffuse_color = (1.0, 0.55, 0.12, 1.0)
+    emission.use_nodes = True
+    nodes = emission.node_tree.nodes
+    nodes.clear()
+    output = nodes.new("ShaderNodeOutputMaterial")
+    shader = nodes.new("ShaderNodeEmission")
+    shader.inputs["Color"].default_value = (1.0, 0.39, 0.055, 1.0)
+    shader.inputs["Strength"].default_value = 4.0
+    emission.node_tree.links.new(shader.outputs["Emission"], output.inputs["Surface"])
+
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=20, radius=0.14,
+                                         location=character_root.location + Vector((0.62, -0.06, 1.35)))
+    orb = bpy.context.object
+    orb.name = "The last light | emissive story prop"
+    orb.data.materials.append(emission)
+    bpy.ops.object.shade_smooth()
+    orb.parent = character_root
+    orb.location = (0.58, -0.10, 1.45)
+    for frame, position, scale in [
+        (1, (0.58, -0.10, 1.45), 1.0),
+        (fps * 10, (0.84, -0.08, 1.70), 1.12),
+        (fps * 20, (0.40, -0.12, 1.52), 0.98),
+        (fps * 30, (0.18, -0.12, 1.65), 1.05),
+        (fps * 40, (-0.12, -0.12, 1.92), 1.18),
+        (fps * 50, (0.10, -0.12, 2.22), 1.3),
+        (total_frames, (0.10, 0.12, 2.75), 1.45),
+    ]:
+        orb.location = position
+        orb.scale = (scale, scale, scale)
+        orb.keyframe_insert(data_path="location", frame=frame)
+        orb.keyframe_insert(data_path="scale", frame=frame)
+    for curve in orb.animation_data.action.fcurves:
+        for key in curve.keyframe_points:
+            key.interpolation = "BEZIER"
+            key.handle_left_type = "AUTO_CLAMPED"
+            key.handle_right_type = "AUTO_CLAMPED"
+
+    bpy.ops.object.light_add(type="POINT", location=(0, 0, 0))
+    glow = bpy.context.object
+    glow.name = "Last light | moving glow"
+    glow.data.energy = 58
+    glow.data.color = (1.0, 0.38, 0.08)
+    glow.data.shadow_soft_size = 0.55
+    glow.parent = character_root
+    for frame, position in [
+        (1, (0.58, -0.1, 1.45)),
+        (fps * 20, (0.4, -0.1, 1.52)),
+        (fps * 40, (-0.12, -0.1, 1.92)),
+        (total_frames, (0.1, 0.12, 2.75)),
+    ]:
+        glow.location = position
+        glow.keyframe_insert(data_path="location", frame=frame)
+    return orb
 
 
 def main():
@@ -345,58 +214,58 @@ def main():
     project_path = Path(args.project).resolve()
     frames_dir = Path(args.frames_dir).resolve()
     frames_dir.mkdir(parents=True, exist_ok=True)
-    config = json.loads(project_path.read_text(encoding="utf-8"))
-    fps = int(config["fps"])
-    total_frames = int(config["duration_seconds"]) * fps
+    project = json.loads(project_path.read_text(encoding="utf-8"))
+    fps = int(project["fps"])
+    total_frames = int(project["duration_seconds"]) * fps
 
-    bpy.ops.object.select_all(action="SELECT")
-    bpy.ops.object.delete(use_global=False)
-    for datablocks in (bpy.data.meshes, bpy.data.curves, bpy.data.materials, bpy.data.cameras, bpy.data.lights):
-        for block in list(datablocks):
-            if block.users == 0:
-                datablocks.remove(block)
+    environment_file = project.get("environment_file", "")
+    loaded_environment = bool(environment_file and bpy.data.filepath)
+    if not loaded_environment:
+        # Minimal empty-scene fallback for local authoring; production projects should
+        # select an imported, licensed environment in config/<story>.json.
+        bpy.ops.object.select_all(action="SELECT")
+        bpy.ops.object.delete(use_global=False)
+        world = bpy.data.worlds.new("SHORTFORGE fallback world")
+        world.use_nodes = True
+        world.node_tree.nodes["Background"].inputs["Color"].default_value = (0.12, 0.18, 0.26, 1)
+        world.node_tree.nodes["Background"].inputs["Strength"].default_value = 0.65
+        bpy.context.scene.world = world
+        bpy.ops.mesh.primitive_plane_add(size=80, location=(0, 0, -0.05))
+        plane = bpy.context.object
+        plane.name = "Fallback studio floor"
+        floor = bpy.data.materials.new("Fallback floor")
+        floor.diffuse_color = (0.16, 0.22, 0.24, 1)
+        plane.data.materials.append(floor)
 
     scene = bpy.context.scene
-    engine_options = {item.identifier for item in bpy.types.RenderSettings.bl_rna.properties["engine"].enum_items}
-    if "BLENDER_EEVEE_NEXT" in engine_options:
-        scene.render.engine = "BLENDER_EEVEE_NEXT"
-    elif "BLENDER_EEVEE" in engine_options:
-        scene.render.engine = "BLENDER_EEVEE"
-    else:
-        scene.render.engine = "BLENDER_WORKBENCH"
-        scene.display.shading.light = "STUDIO"
-        scene.display.shading.show_shadows = True
-        scene.display.shading.show_cavity = True
-
-    scene.render.resolution_x = int(config["width"])
-    scene.render.resolution_y = int(config["height"])
-    scene.render.resolution_percentage = 100
-    scene.render.fps = fps
-    scene.render.image_settings.file_format = "PNG"
-    scene.render.image_settings.color_mode = "RGBA"
-    scene.render.film_transparent = False
-    scene.render.filepath = str(frames_dir / "frame_")
+    set_engine_and_quality(scene, project)
     scene.frame_start = 1
     scene.frame_end = total_frames
-    scene.render.use_file_extension = True
-    scene.render.image_settings.color_depth = "8"
-    scene.render.resolution_percentage = 100
-    scene.render.threads_mode = "FIXED"
-    scene.render.threads = max(1, min(4, os.cpu_count() or 2))
-    scene.view_settings.view_transform = "Standard"
-    scene.view_settings.look = "Medium High Contrast" if "Medium High Contrast" in [x.name for x in scene.view_settings.bl_rna.properties["look"].enum_items] else "None"
-    scene.view_settings.exposure = 0
-    scene.view_settings.gamma = 1
-    if hasattr(scene, "eevee") and hasattr(scene.eevee, "taa_render_samples"):
-        scene.eevee.taa_render_samples = int(config.get("render", {}).get("samples", 32))
-    if hasattr(scene, "eevee_next") and hasattr(scene.eevee_next, "taa_render_samples"):
-        scene.eevee_next.taa_render_samples = int(config.get("render", {}).get("samples", 32))
 
-    mats = make_materials()
-    build_environment(mats)
-    create_character(config, mats, total_frames)
-    setup_camera(scene, total_frames, config)
-    create_lighting(scene)
+    character_cfg = project.get("character", {})
+    model_path = character_cfg.get("model_file")
+    if model_path:
+        avatar = add_rigged_avatar(
+            model_path,
+            character_cfg.get("avatar_id", "hero_female"),
+            location=character_cfg.get("position", [0.0, 0.0, 0.0]),
+            rotation_z=float(character_cfg.get("rotation_z", 0.0)),
+            scale=float(character_cfg.get("scale", 1.0)),
+        )
+        animate_avatar(avatar, project, fps, total_frames)
+        avatar_root = avatar["root"]
+    else:
+        raise RuntimeError("No reusable rigged character model_file was supplied by the asset stage")
+
+    # Add soft cinematic key/fill/rim lights without replacing the authored environment lighting.
+    spawn = Vector(character_cfg.get("position", [0.0, 0.0, 0.0]))
+    add_area_light("SHORTFORGE soft key", spawn + Vector((-4.5, -5.0, 7.0)), spawn + Vector((0, 0, 1.4)), 850, (1.0, 0.79, 0.61), 5.0)
+    add_area_light("SHORTFORGE cool fill", spawn + Vector((4.0, -3.0, 4.0)), spawn + Vector((0, 0, 1.2)), 420, (0.50, 0.69, 1.0), 4.0)
+    add_area_light("SHORTFORGE rim", spawn + Vector((0.0, 2.8, 5.5)), spawn + Vector((0, 0, 1.4)), 700, (1.0, 0.60, 0.30), 3.5)
+
+    create_story_prop(scene, avatar_root, total_frames, fps)
+    camera = create_camera(scene, project, avatar_root, total_frames)
+    scene.camera = camera
     scene.frame_set(1)
 
     if args.save_blend:
@@ -408,10 +277,10 @@ def main():
         scene.frame_set(frame)
         scene.render.filepath = str(frames_dir / f"frame_{frame:06d}.png")
         bpy.ops.render.render(write_still=True)
-        if frame % max(1, fps) == 0 or frame == total_frames:
+        if frame % max(1, fps * 5) == 0 or frame == total_frames:
             print(f"SHORTFORGE_PROGRESS {frame}/{total_frames}", flush=True)
 
-    print(f"SHORTFORGE_RENDER_COMPLETE frames={total_frames} size={config['width']}x{config['height']}", flush=True)
+    print(f"SHORTFORGE_RENDER_COMPLETE frames={total_frames} size={project['width']}x{project['height']} environment={environment_file}", flush=True)
 
 
 if __name__ == "__main__":
