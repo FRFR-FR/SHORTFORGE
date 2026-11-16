@@ -1,6 +1,9 @@
-name: SHORTFORGE render
+name: SHORTFORGE cinematic render
 
 on:
+  push:
+    paths:
+      - "production/launch-short.json"
   workflow_dispatch:
     inputs:
       quality:
@@ -12,13 +15,14 @@ on:
           - smoke
           - preview
           - master
+          - one-minute
       enable_kokoro:
-        description: Generate narration from narration_text in project config
+        description: Generate narration from project narration_text
         type: boolean
         required: true
         default: false
       publish_release:
-        description: Publish MP4 and compact QA files as a GitHub Release
+        description: Publish the MP4, QA results and reusable avatar library as a GitHub Release
         type: boolean
         required: true
         default: true
@@ -33,32 +37,67 @@ concurrency:
 jobs:
   render:
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    timeout-minutes: 360
     env:
       LIBGL_ALWAYS_SOFTWARE: "1"
       MESA_GL_VERSION_OVERRIDE: "4.5"
       BLENDER_USER_CONFIG: ${{ runner.temp }}/blender-config
       XDG_CACHE_HOME: ${{ runner.temp }}/cache
-      QUALITY: ${{ inputs.quality }}
-      ENABLE_KOKORO: ${{ inputs.enable_kokoro }}
-      PUBLISH_RELEASE: ${{ inputs.publish_release }}
+      QUALITY: ${{ github.event_name == 'push' && 'one-minute' || inputs.quality || 'smoke' }}
+      ENABLE_KOKORO: ${{ github.event_name == 'push' || inputs.enable_kokoro }}
+      PUBLISH_RELEASE: ${{ github.event_name == 'push' || inputs.publish_release }}
+      PIP_CACHE_DIR: ${{ runner.temp }}/pip-cache
     steps:
-      - name: Check out project
+      - name: Check out SHORTFORGE
         uses: actions/checkout@v4
 
-      - name: Install Blender, FFmpeg and QA dependencies
+      - name: Cache Blender 4.5.16
+        uses: actions/cache@v4
+        with:
+          path: .cache/blender-4.5.16
+          key: ${{ runner.os }}-shortforge-blender-4.5.16
+
+      - name: Cache licensed scene and avatar source assets
+        uses: actions/cache@v4
+        with:
+          path: .cache/shortforge-assets
+          key: ${{ runner.os }}-shortforge-assets-v3-${{ hashFiles('scripts/fetch_assets.py') }}
+
+      - name: Install Blender system libraries and FFmpeg
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends blender ffmpeg python3-pil libgl1-mesa-dri libegl1
-          blender --version | head -n 2
+          sudo apt-get install -y --no-install-recommends \
+            curl xz-utils ffmpeg libx11-6 libxext6 libxrender1 libxi6 libxfixes3 \
+            libxkbcommon0 libsm6 libice6 libgl1 libegl1 libgl1-mesa-dri \
+            libdbus-1-3 libgomp1 libopenal1 libsndfile1 espeak-ng python3-pil
+
+      - name: Install Blender 4.5.16 LTS if not cached
+        run: |
+          if [ ! -x ".cache/blender-4.5.16/blender" ]; then
+            mkdir -p .cache
+            curl --fail --location --retry 5 --retry-delay 3 \
+              https://mirror.blender.org/release/Blender4.5/blender-4.5.16-linux-x64.tar.xz \
+              -o "$RUNNER_TEMP/blender-4.5.16.tar.xz"
+            mkdir -p .cache/blender-4.5.16
+            tar -xJf "$RUNNER_TEMP/blender-4.5.16.tar.xz" \
+              -C .cache/blender-4.5.16 --strip-components=1
+          fi
+          echo "BLENDER_BIN=$GITHUB_WORKSPACE/.cache/blender-4.5.16/blender" >> "$GITHUB_ENV"
+          .cache/blender-4.5.16/blender --version | head -n 2
+
+      - name: Verify Blender and rendering tools
+        run: |
+          "$BLENDER_BIN" --background --python-expr \
+            "import bpy; print('Blender Python:', bpy.app.version_string); print('glTF importer:', hasattr(bpy.ops.import_scene, 'gltf'))"
           ffmpeg -version | head -n 1
           ffprobe -version | head -n 1
 
       - name: Run Python tests
         run: python3 -m unittest discover -s tests -v
 
-      - name: Build Three.js previs
+      - name: Build optional Three.js previs
         working-directory: preview
+        continue-on-error: true
         run: |
           npm install --no-audit --no-fund
           npm run build
@@ -69,8 +108,16 @@ jobs:
           python3 scripts/prepare_project.py --quality "$QUALITY" --output "$RUNNER_TEMP/shortforge/project.json"
           python3 scripts/validate_project.py "$RUNNER_TEMP/shortforge/project.json"
 
-      - name: Install optional Kokoro dependencies
+      - name: Cache Kokoro Python packages
         if: env.ENABLE_KOKORO == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/pip-cache
+          key: ${{ runner.os }}-shortforge-kokoro-py312-v1
+
+      - name: Install optional Kokoro narration dependencies
+        if: env.ENABLE_KOKORO == 'true'
+        continue-on-error: true
         run: |
           python3 -m venv "$RUNNER_TEMP/shortforge/tts-venv"
           "$RUNNER_TEMP/shortforge/tts-venv/bin/pip" install --upgrade pip
@@ -78,24 +125,31 @@ jobs:
 
       - name: Generate optional Kokoro narration
         if: env.ENABLE_KOKORO == 'true'
+        continue-on-error: true
         run: |
-          "$RUNNER_TEMP/shortforge/tts-venv/bin/python" src/audio/generate_kokoro.py \
-            --project "$RUNNER_TEMP/shortforge/project.json" \
-            --voice "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("kokoro_voice", "am_michael"))' "$RUNNER_TEMP/shortforge/project.json")" \
-            --output "$RUNNER_TEMP/shortforge/voice.wav"
-          python3 - "$RUNNER_TEMP/shortforge/project.json" "$RUNNER_TEMP/shortforge/voice.wav" <<'PY'
-          import json,sys
-          p=json.load(open(sys.argv[1])); p['narration_file']=sys.argv[2]
-          json.dump(p,open(sys.argv[1],'w'),indent=2)
-          PY
+          if [ -x "$RUNNER_TEMP/shortforge/tts-venv/bin/python" ]; then
+            "$RUNNER_TEMP/shortforge/tts-venv/bin/python" src/audio/generate_kokoro.py \
+              --project "$RUNNER_TEMP/shortforge/project.json" \
+              --voice "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("kokoro_voice", "am_michael"))' "$RUNNER_TEMP/shortforge/project.json")" \
+              --output "$RUNNER_TEMP/shortforge/voice.wav"
+            python3 - "$RUNNER_TEMP/shortforge/project.json" "$RUNNER_TEMP/shortforge/voice.wav" <<'PY'
+            import json,sys
+            p=json.load(open(sys.argv[1])); p['narration_file']=sys.argv[2]
+            json.dump(p,open(sys.argv[1],'w'),indent=2)
+            PY
+          else
+            echo "Kokoro dependencies were unavailable; captions remain enabled and the render will continue without narration."
+          fi
 
-      - name: Render, analyze every frame and encode MP4
+      - name: Build reusable avatars, render, frame-QA and encode the MP4
         run: |
           python3 scripts/render.py \
             --project "$RUNNER_TEMP/shortforge/project.json" \
-            --output-dir out/render
+            --output-dir out/render \
+            --blender "$BLENDER_BIN" \
+            --cache-dir .cache/shortforge-assets
 
-      - name: Publish MP4 and QA outputs as a GitHub Release
+      - name: Publish MP4, asset credits, avatars and QA as a GitHub Release
         if: env.PUBLISH_RELEASE == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -106,18 +160,25 @@ jobs:
             out/render/qa-report.json \
             out/render/contact-sheet.jpg \
             out/render/render-manifest.json \
-            --title "SHORTFORGE render ${GITHUB_RUN_NUMBER}" \
-            --notes "Blender native render, FFmpeg H.264, 30 fps. Frame QA and ffprobe verification passed. No Actions artifact upload was used."
+            out/render/asset-manifest.json \
+            out/render/avatar-library.zip \
+            out/render/avatar-library/hero-male.blend \
+            out/render/avatar-library/hero-female.blend \
+            out/render/avatar-library/avatar-library.json \
+            --title "SHORTFORGE — ${GITHUB_RUN_NUMBER}" \
+            --notes "One-minute or selected-profile Blender render, 30 fps. Frame QA and ffprobe verification passed. Reusable male/female 65-joint avatars include 7 emotions and 8 poses. Environment and character credits/licences are recorded in asset-manifest.json. No Actions artifacts are used."
           echo "Release: https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG}" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Write render summary
+      - name: Write render and asset summary
         if: always()
         run: |
           {
-            echo "## SHORTFORGE render"
+            echo "## SHORTFORGE cinematic render"
             echo "- Profile: ${QUALITY}"
-            echo "- Renderer: Blender headless; no Remotion or Chromium"
-            echo "- Encoder: FFmpeg H.264 at 30 fps"
+            echo "- Blender: 4.5.16 LTS"
+            echo "- Environment: prebuilt Blender scene; source and licence recorded in asset-manifest.json"
+            echo "- Characters: two reusable 65-joint avatars, 7 emotions, 8 poses"
+            echo "- Output: 9:16 vertical, 30 fps"
             echo "- Storage: GitHub Release assets only; no Actions artifacts"
             if [ -f out/render/render-manifest.json ]; then
               echo '### Render manifest'
