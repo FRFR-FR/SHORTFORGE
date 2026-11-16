@@ -225,11 +225,26 @@ def add_rigged_avatar(model_path, avatar_id, location=(0.0, 0.0, 0.0), rotation_
     root.rotation_euler.z = math.radians(rotation_z)
     root.scale = (scale, scale, scale)
 
-    palette = PALETTES.get(avatar_id, PALETTES["hero_male"])
+    # Preserve the original CC0 PBR material slots and their base-colour,
+    # normal and roughness images. Replacing these with a flat material would
+    # discard the texture detail that makes this asset production-ready.
     body = next((o for o in imported if o.type == "MESH" and any(k in o.name.lower() for k in ("superhero", "superhero_male", "superhero_female"))), None)
     if body:
-        body.data.materials.clear()
-        body.data.materials.append(_material(f"{avatar_id} tailored hero suit", palette["suit"]))
+        body["shortforge_pbr_preserved"] = True
+        for slot in body.material_slots:
+            source_material = slot.material
+            if not source_material or not source_material.use_nodes:
+                continue
+            for node in source_material.node_tree.nodes:
+                if node.type == "BSDF_PRINCIPLED":
+                    # Retain connected source textures; only tune physically
+                    # plausible response for the cinematic EEVEE scene.
+                    node.inputs["Roughness"].default_value = max(
+                        0.34, min(0.72, float(node.inputs["Roughness"].default_value))
+                    )
+                    node.inputs["Metallic"].default_value = min(
+                        0.12, float(node.inputs["Metallic"].default_value)
+                    )
 
     brow_keys, eye_keys, mouths = _add_face_expressions(armature, imported)
     pose_json = json.dumps(POSES, sort_keys=True)
