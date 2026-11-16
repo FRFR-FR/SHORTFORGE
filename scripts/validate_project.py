@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
-"""Fail-fast validation for a SHORTFORGE project JSON."""
+"""Fail-fast validation for SHORTFORGE story, environment and avatar presets."""
 from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+
+POSES = {"neutral", "wave", "point", "confident", "thinking", "celebrating", "running", "crouching"}
+EMOTIONS = {"neutral", "happy", "sad", "angry", "surprised", "scared", "determined"}
+ENVIRONMENTS = {"dogwalk", "house_of_chores"}
+AVATAR_MODELS = {"male", "female"}
 
 
 def validate(config: dict) -> list[str]:
@@ -35,12 +40,18 @@ def validate(config: dict) -> list[str]:
             errors.append("render.crf must be an integer between 14 and 28")
     if not isinstance(config.get("story"), dict) or not isinstance(config["story"].get("beats"), list):
         errors.append("story.beats must be an array")
+    environment = config.get("environment", {})
+    if environment and environment.get("id") not in ENVIRONMENTS:
+        errors.append(f"environment.id must be one of {sorted(ENVIRONMENTS)}")
+    character = config.get("character", {})
+    if character and character.get("model", "female") not in AVATAR_MODELS:
+        errors.append(f"character.model must be one of {sorted(AVATAR_MODELS)}")
     shots = config.get("shots", [])
     if shots:
         if not isinstance(shots, list):
             errors.append("shots must be an array when supplied")
         else:
-            profiles = {"wide", "push_in", "close", "side", "low"}
+            cameras = {"wide", "push_in", "close", "side", "low"}
             expected_start = 0.0
             for index, shot in enumerate(shots):
                 if not isinstance(shot, dict):
@@ -53,18 +64,25 @@ def validate(config: dict) -> list[str]:
                     continue
                 if abs(float(start) - expected_start) > 0.001:
                     errors.append(f"shots[{index}] must start at {expected_start:g}s to avoid an uncovered/overlapped interval")
-                if shot.get("camera", "wide") not in profiles:
-                    errors.append(f"shots[{index}].camera must be one of {sorted(profiles)}")
+                if shot.get("camera", "wide") not in cameras:
+                    errors.append(f"shots[{index}].camera must be one of {sorted(cameras)}")
+                if shot.get("pose", "neutral") not in POSES:
+                    errors.append(f"shots[{index}].pose must be one of {sorted(POSES)}")
+                if shot.get("emotion", "neutral") not in EMOTIONS:
+                    errors.append(f"shots[{index}].emotion must be one of {sorted(EMOTIONS)}")
                 expected_start = float(start) + float(duration)
             if abs(expected_start - float(config["duration_seconds"])) > 0.001:
                 errors.append("shots must cover the complete project duration")
-    if not isinstance(config.get("character"), dict):
+    if not isinstance(character, dict):
         errors.append("character must be an object")
     else:
         for color_key in ("primary_color", "accent_color"):
-            value = config["character"].get(color_key)
+            value = character.get(color_key)
             if value is not None and (not isinstance(value, list) or len(value) != 4 or any(not isinstance(x, (int, float)) or x < 0 or x > 1 for x in value)):
                 errors.append(f"character.{color_key} must be four RGBA values between 0 and 1")
+        position = character.get("position")
+        if position is not None and (not isinstance(position, list) or len(position) != 3 or any(not isinstance(x, (int, float)) for x in position)):
+            errors.append("character.position must be three numeric XYZ values")
     return errors
 
 
@@ -86,6 +104,7 @@ def main():
     print(f"SHORTFORGE project valid: {path}")
     print(f"Duration: {config['duration_seconds']} seconds | {frames} frames | {config['fps']} fps")
     print(f"Output: {config['width']}×{config['height']} (9:16)")
+    print(f"Environment: {config.get('environment', {}).get('id', 'none')} | Avatar presets: 7 emotions / 8 poses")
 
 
 if __name__ == "__main__":
