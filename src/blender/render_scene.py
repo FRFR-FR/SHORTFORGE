@@ -241,23 +241,13 @@ def main():
     total_frames = int(project["duration_seconds"]) * fps
 
     environment_file = project.get("environment_file", "")
-    loaded_environment = bool(environment_file and bpy.data.filepath)
-    if not loaded_environment:
-        # Minimal empty-scene fallback for local authoring; production projects should
-        # select an imported, licensed environment in config/<story>.json.
-        bpy.ops.object.select_all(action="SELECT")
-        bpy.ops.object.delete(use_global=False)
-        world = bpy.data.worlds.new("SHORTFORGE fallback world")
-        world.use_nodes = True
-        world.node_tree.nodes["Background"].inputs["Color"].default_value = (0.12, 0.18, 0.26, 1)
-        world.node_tree.nodes["Background"].inputs["Strength"].default_value = 0.65
-        bpy.context.scene.world = world
-        bpy.ops.mesh.primitive_plane_add(size=80, location=(0, 0, -0.05))
-        plane = bpy.context.object
-        plane.name = "Fallback studio floor"
-        floor = bpy.data.materials.new("Fallback floor")
-        floor.diffuse_color = (0.16, 0.22, 0.24, 1)
-        plane.data.materials.append(floor)
+    if not environment_file:
+        raise RuntimeError("Production rendering requires a downloaded, licensed prebuilt Blender environment")
+    if not bpy.data.filepath or Path(bpy.data.filepath).resolve() != Path(environment_file).resolve():
+        raise RuntimeError(
+            f"Blender did not open the selected prebuilt environment: expected {environment_file}, "
+            f"loaded {bpy.data.filepath or '(empty scene)'}"
+        )
 
     scene = bpy.context.scene
     set_engine_and_quality(scene, project)
