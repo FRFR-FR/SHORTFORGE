@@ -4,7 +4,8 @@ A fresh, code-first production pipeline for original vertical animated shorts. B
 
 ## What it does
 
-- Builds original stylized 3D environments and characters procedurally in Blender.
+- Imports complete, prebuilt Blender Studio environments with recorded licences and SHA-256 provenance; no cubes-and-spheres blockout is the default production environment.
+- Builds reusable textured male and female humanoid avatars before rendering. Each is a 65-joint Quaternius CC0 rig with PBR skin/hair/eye textures, seven facial emotions and eight reusable poses.
 - Animates a character, camera and scene at a fixed **30 fps**.
 - Uses **9:16 vertical** delivery: 720×1280 preview/production and optional 1080×1920 master; 540×960 ten-second smoke test.
 - Provides a separate Three.js browser previs so shots can be inspected interactively before final rendering.
@@ -62,7 +63,7 @@ The preview is for shot blocking, camera framing and timing. It is deliberately 
 
 Required workflow permission: **Contents: read and write**. The workflow uses the built-in `GITHUB_TOKEN`; no PAT or YouTube API key is required for rendering. A YouTube API key is not used by this project because the short-form research stage is a human/ChatGPT-assisted review process, not automated scraping.
 
-The smoke setting is exactly 10 seconds × 30 fps = 300 frames. Preview defaults to 30 seconds at 720×1280. Master defaults to 30 seconds at 1080×1920. Increase duration and edit the story/config for a real episode.
+The smoke setting is exactly 10 seconds × 30 fps = 300 frames. Preview defaults to 30 seconds at 720×1280. Master defaults to 30 seconds at 1080×1920. One-minute renders 60 seconds at 720×1280 / 30 fps = 1,800 frames.
 
 ### Release storage
 
@@ -95,6 +96,7 @@ Reference research is for high-level format analysis only: hooks, average shot d
 
 ```text
 config/                 Project, style-bible and smoke-test configs
+src/blender/avatar_system.py   Reusable 7-emotion / 8-pose humanoid avatars
 src/blender/            Procedural scene builder and direct frame renderer
 src/qa/                 Per-frame analysis and contact-sheet generator
 src/audio/              Optional Kokoro narration adapter
