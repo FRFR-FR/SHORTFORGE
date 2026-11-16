@@ -76,6 +76,9 @@ def main():
          "--male", asset_manifest["avatars"]["male"]["path"],
          "--female", asset_manifest["avatars"]["female"]["path"],
          "--output-dir", str(avatar_dir)])
+    character["avatar_blend_file"] = str(avatar_dir / f"{character['avatar_id'].replace('_', '-')}.blend")
+    if not Path(character["avatar_blend_file"]).is_file():
+        raise SystemExit(f"Reusable avatar build did not create {character['avatar_blend_file']}")
     avatar_zip = output_dir / "avatar-library.zip"
     with zipfile.ZipFile(avatar_zip, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
         for path in sorted(avatar_dir.iterdir()):
