@@ -1,0 +1,124 @@
+{
+  "title": "The Last Light",
+  "description": "An original one-minute cinematic short about a small act of kindness in a sleeping house.",
+  "duration_seconds": 60,
+  "fps": 30,
+  "width": 720,
+  "height": 1280,
+  "quality": "one-minute",
+  "environment": {
+    "id": "house_of_chores"
+  },
+  "style_bible": "config/style-bible.json",
+  "narration_text": "On the quietest street in the city, Nia noticed a light where no light should be. It trembled inside a cracked glass lantern, no brighter than a breath. Everyone else hurried past. Nia stopped. She shielded the little glow from the wind and followed its soft pulse through the sleeping house. At the old window, the lantern flickered out. For one heartbeat, the world went dark. Then a warm spark rose from the glass, circled her hands, and climbed into the night. Nia watched it join the stars. The house was still quiet, but the way home was shining again.",
+  "captions_file": "production/the-last-light.srt",
+  "kokoro_voice": "am_michael",
+  "render": {
+    "engine": "BLENDER_EEVEE_NEXT",
+    "samples": 64,
+    "crf": 16,
+    "preset": "medium",
+    "exposure": 0
+  },
+  "story": {
+    "hook": "One tiny light appears in a sleeping house. One person chooses not to walk past.",
+    "beats": [
+      "Introduce Nia and the beautifully dressed interior of a sleeping home.",
+      "Reveal a faint glowing lantern and an unusual flicker from inside it.",
+      "Nia chooses to stop, lifts the lantern and shields its light from the draught.",
+      "The spark escapes at the window; a brief darkness creates the emotional turn.",
+      "The glow lifts outside and transforms into a warm point of light above the house.",
+      "Finish on Nia watching the light rise, with a quiet visual resolution."
+    ]
+  },
+  "character": {
+    "name": "Nia",
+    "model": "female",
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "rotation_z": 0,
+    "scale": 1,
+    "camera_aim_height": 1.22,
+    "primary_color": [
+      0.1,
+      0.32,
+      0.48,
+      1
+    ],
+    "accent_color": [
+      0.82,
+      0.56,
+      0.28,
+      1
+    ]
+  },
+  "shots": [
+    {
+      "start_seconds": 0,
+      "duration_seconds": 7.5,
+      "camera": "wide",
+      "pose": "neutral",
+      "emotion": "neutral",
+      "character_drift": 0.05
+    },
+    {
+      "start_seconds": 7.5,
+      "duration_seconds": 7.5,
+      "camera": "push_in",
+      "pose": "wave",
+      "emotion": "happy",
+      "character_drift": 0.08
+    },
+    {
+      "start_seconds": 15,
+      "duration_seconds": 7.5,
+      "camera": "close",
+      "pose": "thinking",
+      "emotion": "surprised",
+      "character_drift": 0.03
+    },
+    {
+      "start_seconds": 22.5,
+      "duration_seconds": 7.5,
+      "camera": "side",
+      "pose": "point",
+      "emotion": "scared",
+      "character_drift": 0.08
+    },
+    {
+      "start_seconds": 30,
+      "duration_seconds": 7.5,
+      "camera": "low",
+      "pose": "crouching",
+      "emotion": "sad",
+      "character_drift": 0.02
+    },
+    {
+      "start_seconds": 37.5,
+      "duration_seconds": 7.5,
+      "camera": "push_in",
+      "pose": "running",
+      "emotion": "angry",
+      "character_drift": 0.12
+    },
+    {
+      "start_seconds": 45,
+      "duration_seconds": 7.5,
+      "camera": "close",
+      "pose": "celebrating",
+      "emotion": "determined",
+      "character_drift": 0.05
+    },
+    {
+      "start_seconds": 52.5,
+      "duration_seconds": 7.5,
+      "camera": "wide",
+      "pose": "confident",
+      "emotion": "happy",
+      "character_drift": 0
+    }
+  ]
+}
