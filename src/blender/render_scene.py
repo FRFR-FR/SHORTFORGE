@@ -157,11 +157,19 @@ def create_camera(scene, project, avatar_root, total_frames):
         bsdf.inputs["Emission Strength"].default_value = 0.7
     font.materials.append(title_mat)
     text_obj.hide_render = False
+    text_obj.keyframe_insert(data_path="hide_render", frame=1)
+    text_obj.hide_viewport = False
+    text_obj.keyframe_insert(data_path="hide_viewport", frame=1)
     text_obj.keyframe_insert(data_path="location", frame=1)
     text_obj.location.y += 0.18
     text_obj.keyframe_insert(data_path="location", frame=42)
     text_obj.location.y -= 0.18
     text_obj.keyframe_insert(data_path="location", frame=60)
+    # Title only occupies the opening beat; subsequent frames are clean for captions.
+    text_obj.hide_render = True
+    text_obj.keyframe_insert(data_path="hide_render", frame=121)
+    text_obj.hide_viewport = True
+    text_obj.keyframe_insert(data_path="hide_viewport", frame=121)
     return camera
 
 
