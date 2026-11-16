@@ -17,21 +17,21 @@ ENVIRONMENTS = {
         "url": "https://mirror.blender.org/demo/splash/blender-4.5-splash.blend",
         "minimum_bytes": 300_000_000,
         "source": "Blender Studio official Blender demo files — DOGWALK (Blender 4.5)",
-        "license": "CC-BY",
-        "license_url": "https://creativecommons.org/licenses/by/4.0/",
-        "source_page": "https://www.blender.org/download/demo-files/",
-        "attribution": "Blender Studio — DOGWALK, licensed under CC BY 4.0",
-        "notes": "Full prebuilt Blender scene. Keep the source attribution with redistributed renders and project files.",
+        "license": "CC-BY-SA (DOGWALK splash artwork; see source page for exact asset terms)",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "source_page": "https://www.blender.org/download/releases/4-5/",
+        "attribution": "Blender Foundation / Blender Studio — DOGWALK splash artwork, CC BY-SA; see studio.blender.org/dogwalk",
+        "notes": "Full prebuilt Blender splash scene. Derivative artwork must follow the applicable share-alike terms.",
     },
     "house_of_chores": {
         "url": "https://mirror.blender.org/demo/splash/blender-4.3-splash.blend",
         "minimum_bytes": 200_000_000,
         "source": "Blender Studio official Blender demo files — House of Chores (Blender 4.3)",
-        "license": "CC-BY",
-        "license_url": "https://creativecommons.org/licenses/by/4.0/",
+        "license": "CC-BY (official Blender Demo Files listing; verify the individual file credit before redistribution)",
+        "license_url": "https://www.blender.org/download/demo-files/",
         "source_page": "https://www.blender.org/download/demo-files/",
-        "attribution": "Blender Studio — House of Chores, licensed under CC BY 4.0",
-        "notes": "Full prebuilt Blender scene. Intended for an interior-set story. Use Blender 4.5 to open and convert when required.",
+        "attribution": "Blender Studio — House of Chores (credit per official Blender Demo Files page)",
+        "notes": "Full prebuilt Blender scene. Use Blender 4.5 to open and render.",
     },
 }
 
@@ -106,7 +106,7 @@ def main():
     output = Path(args.output_manifest).resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
 
-    environment_id = project.get("environment", {}).get("id", "dogwalk")
+    environment_id = project.get("environment", {}).get("id", "house_of_chores")
     if environment_id not in ENVIRONMENTS:
         raise SystemExit(f"Unknown environment {environment_id!r}; available: {', '.join(ENVIRONMENTS)}")
     env_info = ENVIRONMENTS[environment_id]
