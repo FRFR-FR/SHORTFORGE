@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render with Blender, run frame QA, encode with FFmpeg, and verify the MP4."""
+"""Fetch licensed assets, build reusable avatars, render with Blender, QA, and encode."""
 from __future__ import annotations
 import argparse
 import json
@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -32,6 +33,7 @@ def main():
     parser.add_argument("--project", required=True)
     parser.add_argument("--output-dir", required=True)
     parser.add_argument("--blender", default=os.environ.get("BLENDER_BIN", "blender"))
+    parser.add_argument("--cache-dir", default=str(ROOT / ".cache/shortforge-assets"))
     parser.add_argument("--keep-frames", action="store_true")
     parser.add_argument("--save-blend", action="store_true")
     args = parser.parse_args()
@@ -45,12 +47,46 @@ def main():
     config = json.loads(project_path.read_text(encoding="utf-8"))
     expected = int(config["duration_seconds"]) * int(config["fps"])
     width, height = int(config["width"]), int(config["height"])
-    blender = shutil.which(args.blender)
+    blender = shutil.which(args.blender) or (str(Path(args.blender).resolve()) if Path(args.blender).is_file() else None)
     if not blender:
         raise SystemExit(f"Blender executable not found: {args.blender}")
     for executable in ("ffmpeg", "ffprobe"):
         if not shutil.which(executable):
             raise SystemExit(f"Required executable not found: {executable}")
+
+    # Fetch a complete authored Blender scene and two licensed, skinned humanoid models.
+    asset_manifest_path = output_dir / "asset-manifest.json"
+    run([sys.executable, str(ROOT / "scripts/fetch_assets.py"),
+         "--project", str(project_path), "--cache-dir", str(Path(args.cache_dir).resolve()),
+         "--output-manifest", str(asset_manifest_path)])
+    asset_manifest = json.loads(asset_manifest_path.read_text(encoding="utf-8"))
+    environment_path = Path(asset_manifest["environment"]["path"]).resolve()
+    config["environment_file"] = str(environment_path)
+    character = config.setdefault("character", {})
+    avatar_gender = character.get("model", "female")
+    if avatar_gender not in asset_manifest["avatars"]:
+        raise SystemExit(f"Unknown character.model {avatar_gender!r}; use male or female")
+    character["model_file"] = asset_manifest["avatars"][avatar_gender]["path"]
+    character["avatar_id"] = "hero_female" if avatar_gender == "female" else "hero_male"
+
+    # The reusable avatar library is built first; each .blend stores a rigged character,
+    # facial shape keys and the 7-emotion/8-pose bank for future projects.
+    avatar_dir = output_dir / "avatar-library"
+    run([blender, "--background", "--python", str(ROOT / "src/blender/build_avatar_library.py"), "--",
+         "--male", asset_manifest["avatars"]["male"]["path"],
+         "--female", asset_manifest["avatars"]["female"]["path"],
+         "--output-dir", str(avatar_dir)])
+    avatar_zip = output_dir / "avatar-library.zip"
+    with zipfile.ZipFile(avatar_zip, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
+        for path in sorted(avatar_dir.iterdir()):
+            if path.is_file():
+                archive.write(path, arcname=f"avatar-library/{path.name}")
+
+    prepared_project = output_dir / "prepared-project.json"
+    prepared_project.write_text(json.dumps(config, indent=2), encoding="utf-8")
+    validation = subprocess.run([sys.executable, str(ROOT / "scripts/validate_project.py"), str(prepared_project)])
+    if validation.returncode:
+        raise SystemExit(validation.returncode)
 
     keep_dir = output_dir / "frames" if args.keep_frames else None
     if keep_dir:
@@ -66,8 +102,9 @@ def main():
     contact_path = output_dir / "contact-sheet.jpg"
     video_path = output_dir / "shortforge.mp4"
     blend_path = output_dir / "scene.blend" if args.save_blend else Path("")
-    command = [blender, "--background", "--python", str(ROOT / "src/blender/render_scene.py"), "--",
-               "--project", str(project_path), "--frames-dir", str(frames_dir)]
+    command = [blender, "--background", str(environment_path), "--python",
+               str(ROOT / "src/blender/render_scene.py"), "--",
+               "--project", str(prepared_project), "--frames-dir", str(frames_dir)]
     if args.save_blend:
         command.extend(["--save-blend", str(blend_path)])
     env = os.environ.copy()
@@ -81,7 +118,7 @@ def main():
          "--report", str(report_path), "--contact-sheet", str(contact_path)])
 
     pattern = str(frames_dir / "frame_%06d.png")
-    crf = str(config.get("render", {}).get("crf", 18))
+    crf = str(config.get("render", {}).get("crf", 17))
     preset = str(config.get("render", {}).get("preset", "medium"))
     narration = config.get("narration_file", "")
     narration_path = Path(narration).resolve() if narration else None
@@ -121,9 +158,10 @@ def main():
     audio_streams = [s for s in media.get("streams", []) if s.get("codec_type") == "audio"]
     if narration_path and narration_path.exists() and not audio_streams:
         raise SystemExit("Narration file was configured but no audio stream was found in the MP4")
-    if video_path.stat().st_size < 1000:
-        raise SystemExit("Encoded MP4 is unexpectedly small")
+    if video_path.stat().st_size < 1_000_000:
+        raise SystemExit("Encoded MP4 is unexpectedly small for a 720p one-minute animated short")
 
+    avatar_library = json.loads((avatar_dir / "avatar-library.json").read_text(encoding="utf-8"))
     manifest = {
         "title": config["title"],
         "quality": config.get("quality", "custom"),
@@ -138,9 +176,28 @@ def main():
         "contact_sheet": contact_path.name,
         "captions_burned_in": bool(captions_path),
         "narration_muxed": bool(narration_path),
-        "render_engine": "Blender native renderer",
+        "render_engine": "Blender Eevee Next (or Eevee compatibility)",
         "encoder": "FFmpeg libx264",
-        "actions_artifacts_used": False
+        "actions_artifacts_used": False,
+        "environment": {
+            "id": asset_manifest["environment"]["id"],
+            "source": asset_manifest["environment"]["source"],
+            "license": asset_manifest["environment"]["license"],
+            "attribution": asset_manifest["environment"]["attribution"],
+            "source_url": asset_manifest["environment"]["url"],
+            "sha256": asset_manifest["environment"]["sha256"],
+            "bytes": asset_manifest["environment"]["bytes"],
+        },
+        "avatar_library": {
+            "archive": avatar_zip.name,
+            "manifest": "avatar-library/avatar-library.json",
+            "emotions": avatar_library["emotions"],
+            "poses": avatar_library["poses"],
+            "avatars": [entry["id"] for entry in avatar_library["avatars"]],
+            "license": avatar_library["source_license"],
+            "source": avatar_library["source"],
+        },
+        "asset_manifest": asset_manifest_path.name,
     }
     (output_dir / "render-manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     print(json.dumps(manifest, indent=2))
