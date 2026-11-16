@@ -56,6 +56,15 @@ def _material(name: str, color):
 
 
 def _import_gltf(model_path: Path, label: str):
+    # Blender 4.2+ distributes glTF IO as a bundled extension/add-on.
+    # Enable it explicitly for headless Actions runs.
+    try:
+        if "io_scene_gltf2" not in bpy.context.preferences.addons:
+            bpy.ops.preferences.addon_enable(module="io_scene_gltf2")
+    except Exception as exc:
+        print(f"glTF add-on auto-enable notice: {exc}")
+    if not hasattr(bpy.ops.import_scene, "gltf"):
+        raise RuntimeError("Blender's glTF 2.0 importer is unavailable; enable io_scene_gltf2")
     before = set(bpy.data.objects)
     bpy.ops.import_scene.gltf(filepath=str(model_path))
     imported = [obj for obj in bpy.data.objects if obj not in before]
