@@ -30,33 +30,50 @@
       0.12,
       0.48,
       0.78,
-      1.0
+      1
     ],
     "accent_color": [
-      1.0,
+      1,
       0.58,
       0.12,
-      1.0
-    ]
+      1
+    ],
+    "model": "female",
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "rotation_z": 0,
+    "scale": 1
   },
   "shots": [
     {
       "start_seconds": 0,
       "duration_seconds": 3,
       "camera": "wide",
-      "purpose": "Establish the town and protagonist"
+      "purpose": "Establish the town and protagonist",
+      "pose": "neutral",
+      "emotion": "neutral"
     },
     {
       "start_seconds": 3,
       "duration_seconds": 4,
       "camera": "push_in",
-      "purpose": "Move closer as the protagonist accelerates"
+      "purpose": "Move closer as the protagonist accelerates",
+      "pose": "wave",
+      "emotion": "happy"
     },
     {
       "start_seconds": 7,
       "duration_seconds": 3,
       "camera": "close",
-      "purpose": "Finish on a readable character beat"
+      "purpose": "Finish on a readable character beat",
+      "pose": "point",
+      "emotion": "determined"
     }
-  ]
+  ],
+  "environment": {
+    "id": "house_of_chores"
+  }
 }
