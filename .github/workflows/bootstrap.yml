@@ -1,0 +1,75 @@
+name: SHORTFORGE bootstrap and Blender smoke test
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.shortforge-source-*.b64'
+      - '.github/workflows/bootstrap.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  install-and-smoke-test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      LIBGL_ALWAYS_SOFTWARE: '1'
+      MESA_GL_VERSION_OVERRIDE: '4.5'
+    steps:
+      - name: Check out the bootstrap payload
+        uses: actions/checkout@v4
+
+      - name: Install Blender, FFmpeg and QA dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends blender ffmpeg python3-pil libgl1-mesa-dri libegl1
+          blender --version | head -n 2
+          ffmpeg -version | head -n 1
+          ffprobe -version | head -n 1
+
+      - name: Reassemble and install SHORTFORGE source
+        run: |
+          set -euo pipefail
+          cat .shortforge-source-*.b64 > "$RUNNER_TEMP/shortforge-source.b64"
+          test "$(wc -c < "$RUNNER_TEMP/shortforge-source.b64")" -eq 37400
+          base64 --decode "$RUNNER_TEMP/shortforge-source.b64" > "$RUNNER_TEMP/shortforge-source.tar.xz"
+          tar -tJf "$RUNNER_TEMP/shortforge-source.tar.xz" >/dev/null
+          tar -xJf "$RUNNER_TEMP/shortforge-source.tar.xz" --no-same-owner --no-same-permissions
+          rm -f .shortforge-source-*.b64 .github/workflows/bootstrap.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Install SHORTFORGE Blender and FFmpeg production pipeline'
+          git push origin HEAD:main
+
+      - name: Run Python test suite
+        run: python3 -m unittest discover -s tests -v
+
+      - name: Build Three.js previs
+        working-directory: preview
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
+
+      - name: Render ten-second Blender smoke test
+        run: |
+          mkdir -p "$RUNNER_TEMP/shortforge" out/initial-smoke
+          python3 scripts/prepare_project.py --quality smoke --output "$RUNNER_TEMP/shortforge/project.json"
+          python3 scripts/validate_project.py "$RUNNER_TEMP/shortforge/project.json"
+          python3 scripts/render.py --project "$RUNNER_TEMP/shortforge/project.json" --output-dir out/initial-smoke
+
+      - name: Publish MP4 and QA results as a GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="shortforge-initial-smoke-${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" \
+            out/initial-smoke/shortforge.mp4 \
+            out/initial-smoke/qa-report.json \
+            out/initial-smoke/contact-sheet.jpg \
+            out/initial-smoke/render-manifest.json \
+            --title "SHORTFORGE initial Blender smoke test" \
+            --notes "10-second, 30 fps Blender-rendered smoke test. Release is created only after frame QA and ffprobe verification pass."
+          echo "Release: https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG}" >> "$GITHUB_STEP_SUMMARY"
