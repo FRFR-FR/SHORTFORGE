@@ -12,7 +12,7 @@ from mathutils import Vector
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from avatar_system import add_rigged_avatar, animate_avatar
+from avatar_system import load_avatar_blend, animate_avatar
 
 
 def parse_args():
@@ -73,22 +73,36 @@ def create_camera(scene, project, avatar_root, total_frames):
     spawn = Vector(character.get("position", [0.0, 0.0, 0.0]))
     aim_height = float(character.get("camera_aim_height", 1.18))
     target = spawn + Vector((0.0, 0.0, aim_height))
-    bpy.ops.object.camera_add(location=target + Vector((0.0, -8.0, 3.0)))
+    # Start from the imported set's authored camera. Its composition establishes
+    # the scale and direction of the location; the short's camera then tracks the hero.
+    source_camera = scene.camera
+    if source_camera:
+        source_location = source_camera.matrix_world.translation.copy()
+        base_offset = source_location - target
+        if base_offset.length < 1.0 or base_offset.length > 80.0:
+            base_offset = Vector((0.0, -8.0, 3.0))
+        base_lens = float(source_camera.data.lens)
+    else:
+        base_offset = Vector((0.0, -8.0, 3.0))
+        base_lens = 52.0
+    bpy.ops.object.camera_add(location=target + base_offset)
     camera = bpy.context.object
     camera.name = "SHORTFORGE vertical cinema camera"
-    camera.data.lens = 52
+    camera.data.lens = base_lens
     camera.data.sensor_fit = "VERTICAL"
     camera.data.sensor_height = 24
     camera.data.clip_start = 0.05
     camera.data.clip_end = 1000.0
     scene.camera = camera
 
+    direction = base_offset.normalized()
+    base_distance = max(3.5, min(24.0, base_offset.length))
     profiles = {
-        "wide": (Vector((0.0, -10.2, 4.0)), 45.0),
-        "push_in": (Vector((0.0, -8.2, 3.4)), 52.0),
-        "close": (Vector((0.0, -6.5, 2.7)), 62.0),
-        "side": (Vector((4.1, -7.6, 3.25)), 52.0),
-        "low": (Vector((0.0, -8.8, 2.15)), 48.0),
+        "wide": (direction * base_distance * 1.08, base_lens * 0.90, 0.0, 0.0),
+        "push_in": (direction * base_distance * 0.90, base_lens * 1.02, 0.0, 0.0),
+        "close": (direction * base_distance * 0.70, base_lens * 1.14, 0.0, 0.0),
+        "side": (direction * base_distance * 0.86, base_lens, 0.18, 0.0),
+        "low": (direction * base_distance * 0.96 + Vector((0.0, 0.0, -0.65)), base_lens * 0.96, 0.0, -0.15),
     }
     shots = project.get("shots") or [{
         "start_seconds": 0,
@@ -98,9 +112,9 @@ def create_camera(scene, project, avatar_root, total_frames):
     for shot in shots:
         start = max(1, int(float(shot.get("start_seconds", 0)) * scene.render.fps) + 1)
         end = min(total_frames, start + int(float(shot.get("duration_seconds", 1)) * scene.render.fps) - 1)
-        offset, lens = profiles.get(shot.get("camera", "wide"), profiles["wide"])
+        offset, lens, side_offset, height_offset = profiles.get(shot.get("camera", "wide"), profiles["wide"])
         shot_target = target + Vector(shot.get("camera_target_offset", [0.0, 0.0, 0.0]))
-        camera.location = shot_target + offset
+        camera.location = shot_target + offset + Vector((side_offset * base_distance, 0.0, height_offset))
         camera.rotation_euler = (shot_target - camera.location).to_track_quat("-Z", "Y").to_euler()
         camera.data.lens = lens
         camera.keyframe_insert(data_path="location", frame=start)
@@ -243,10 +257,10 @@ def main():
     scene.frame_end = total_frames
 
     character_cfg = project.get("character", {})
-    model_path = character_cfg.get("model_file")
-    if model_path:
-        avatar = add_rigged_avatar(
-            model_path,
+    avatar_blend = character_cfg.get("avatar_blend_file")
+    if avatar_blend:
+        avatar = load_avatar_blend(
+            avatar_blend,
             character_cfg.get("avatar_id", "hero_female"),
             location=character_cfg.get("position", [0.0, 0.0, 0.0]),
             rotation_z=float(character_cfg.get("rotation_z", 0.0)),
@@ -255,7 +269,7 @@ def main():
         animate_avatar(avatar, project, fps, total_frames)
         avatar_root = avatar["root"]
     else:
-        raise RuntimeError("No reusable rigged character model_file was supplied by the asset stage")
+        raise RuntimeError("No reusable avatar .blend file was supplied by the avatar-library stage")
 
     # Add soft cinematic key/fill/rim lights without replacing the authored environment lighting.
     spawn = Vector(character_cfg.get("position", [0.0, 0.0, 0.0]))
