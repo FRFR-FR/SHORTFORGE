@@ -370,16 +370,17 @@ def build_window_tax_set(scene, avatar_root, total_frames, fps):
             height = 0.38
             final_x = target_x - 0.21 + col * 0.42
             final_z = target_z - 0.47 + row * 0.44
-            start_x = final_x + 2.2
+            start_x = final_x + 25.0
+            start_z = final_z - 12.0
             block = story_cube(
                 f"Tax response | animated brick {row * 2 + col + 1}",
-                (start_x, 5.54, final_z - 1.6),
+                (start_x, 5.54, start_z),
                 (width, 0.16, height),
                 brick if (row + col) % 2 == 0 else brick_alt,
                 0.018,
             )
             block.keyframe_insert(data_path="location", frame=1)
-            block.location = (start_x, 5.54, final_z - 1.6)
+            block.location = (start_x, 5.54, start_z)
             block.keyframe_insert(data_path="location", frame=18 * fps)
             block.location = (final_x, 5.39, final_z)
             block.keyframe_insert(data_path="location", frame=26 * fps)
