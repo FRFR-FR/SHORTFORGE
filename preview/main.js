@@ -3,52 +3,77 @@ import './style.css';
 
 const host = document.querySelector('#stage');
 const scene = new THREE.Scene();
-scene.background = new THREE.Color('#a8cddd');
-scene.fog = new THREE.Fog('#a8cddd', 18, 42);
-const camera = new THREE.PerspectiveCamera(34, 9 / 16, 0.1, 100);
+scene.background = new THREE.Color('#182733');
+scene.fog = new THREE.Fog('#182733', 26, 62);
+const camera = new THREE.PerspectiveCamera(37, 9 / 16, 0.1, 120);
 camera.up.set(0, 0, 1);
-camera.position.set(0, -13.2, 4.2);
-camera.lookAt(0, 1.1, 2.0);
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.1;
+renderer.toneMappingExposure = 1.08;
 host.appendChild(renderer.domElement);
 
-scene.add(new THREE.HemisphereLight(0xe7f5ff, 0x786b5d, 2.1));
-const key = new THREE.DirectionalLight(0xffe0ba, 3.2);
-key.position.set(-6, -8, 12);
+scene.add(new THREE.HemisphereLight(0xe8f2ff, 0x4c3d34, 1.65));
+const key = new THREE.DirectionalLight(0xffd3a0, 3.1);
+key.position.set(-8, -9, 15);
 key.castShadow = true;
-key.shadow.mapSize.set(1024, 1024);
+key.shadow.mapSize.set(2048, 2048);
 scene.add(key);
-const rim = new THREE.DirectionalLight(0x9bcce4, 1.5);
-rim.position.set(7, 3, 8);
+const fill = new THREE.DirectionalLight(0x8bb8d1, 1.45);
+fill.position.set(9, -2, 9);
+scene.add(fill);
+const rim = new THREE.DirectionalLight(0xffa969, 1.9);
+rim.position.set(0, 12, 10);
 scene.add(rim);
 
-const mat = (color, roughness = 0.82) => new THREE.MeshStandardMaterial({ color, roughness });
-const mats = {
-  ground: mat('#8c887c'), road: mat('#252f39'), sidewalk: mat('#bbb6a8'),
-  buildings: ['#bd6f5d', '#4b9196', '#c4a071', '#82799f'].map(c => mat(c)),
-  window: mat('#4f8092', 0.3), leaf: mat('#3b7747'), trunk: mat('#684a35'),
-  primary: mat('#237bb6'), accent: mat('#e99432'), skin: mat('#d79662'),
-  dark: mat('#202a35'), white: mat('#f4eee4'), lane: mat('#ebcf8e')
+const material = (color, roughness = 0.82, metalness = 0) =>
+  new THREE.MeshStandardMaterial({ color, roughness, metalness });
+const palette = {
+  stone: material('#b69b79'),
+  paleStone: material('#cfb894'),
+  brick: material('#8f4937'),
+  brick2: material('#ad6146'),
+  timber: material('#33251f'),
+  glass: material('#527b8e', 0.22, 0.12),
+  roof: material('#303943'),
+  road: material('#202a31', 0.56),
+  paving: material('#77756d'),
+  brass: material('#b7893d', 0.26, 0.72),
+  parchment: material('#decaa2'),
+  leather: material('#4b2d22'),
+  ink: material('#463b30'),
+  skin: material('#d49a70'),
+  coat: material('#294e65'),
+  coatTrim: material('#b77a35'),
+  shoe: material('#252329'),
+  lamp: new THREE.MeshStandardMaterial({
+    color: '#ffb45c', emissive: '#ff8f32', emissiveIntensity: 1.25, roughness: 0.28
+  })
 };
 
-function box(parent, name, pos, size, material, bevel = false) {
+function addBox(parent, name, pos, size, mat, bevel = 0.025) {
   const geometry = new THREE.BoxGeometry(...size);
-  const mesh = new THREE.Mesh(geometry, material);
+  const mesh = new THREE.Mesh(geometry, mat);
   mesh.name = name;
   mesh.position.set(...pos);
   mesh.castShadow = true;
   mesh.receiveShadow = true;
+  if (bevel > 0) {
+    const edges = new THREE.EdgesGeometry(geometry);
+    const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({
+      color: '#171a1c', transparent: true, opacity: 0.12
+    }));
+    mesh.add(line);
+  }
   parent.add(mesh);
   return mesh;
 }
-function ball(parent, name, pos, scale, material) {
-  const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 12), material);
+
+function addSphere(parent, name, pos, scale, mat) {
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), mat);
   mesh.name = name;
   mesh.position.set(...pos);
   mesh.scale.set(...scale);
@@ -58,84 +83,208 @@ function ball(parent, name, pos, scale, material) {
   return mesh;
 }
 
-const ground = box(scene, 'Ground', [0, 2, -0.22], [28, 36, 0.4], mats.ground);
-box(scene, 'Road', [0, -0.2, 0], [28, 7.2, 0.08], mats.road);
-box(scene, 'Far sidewalk', [0, 3.65, 0.07], [28, 1.2, 0.16], mats.sidewalk);
-box(scene, 'Near sidewalk', [0, -4.05, 0.07], [28, 1.2, 0.16], mats.sidewalk);
-for (let x = -12; x <= 12; x += 3) box(scene, 'Road dash', [x, -0.2, 0.06], [1.35, 0.13, 0.035], mats.lane);
+function addWindow(parent, x, z, frontY, label, blind = false) {
+  const w = 0.96, h = 1.45;
+  addBox(parent, label + ' recess', [x, frontY, z], [w, 0.11, h], palette.timber, 0.008);
+  addBox(parent, label + ' glass', [x, frontY - 0.075, z], [w - 0.18, 0.035, h - 0.20],
+    blind ? palette.stone : palette.glass, 0.008);
+  const frameY = frontY - 0.12;
+  for (const dx of [-w / 2, w / 2]) {
+    addBox(parent, label + ' jamb', [x + dx, frameY, z], [0.1, 0.13, h + 0.12], palette.timber);
+  }
+  for (const dz of [-h / 2, h / 2]) {
+    addBox(parent, label + ' sash', [x, frameY, z + dz], [w + 0.1, 0.13, 0.1], palette.timber);
+  }
+  addBox(parent, label + ' mullion', [x, frameY - 0.01, z], [0.055, 0.15, h - 0.1], palette.timber);
+  addBox(parent, label + ' crossbar', [x, frameY - 0.02, z], [w - 0.1, 0.15, 0.055], palette.timber);
+  addBox(parent, label + ' sill', [x, frontY - 0.2, z - h / 2 - 0.08], [w + 0.26, 0.32, 0.16], palette.paleStone);
+  addBox(parent, label + ' lintel', [x, frontY - 0.16, z + h / 2 + 0.09], [w + 0.18, 0.2, 0.17], palette.paleStone);
+}
 
-[-10, -5.2, 0, 5.2, 10].forEach((x, i) => {
-  const width = i % 2 ? 3.8 : 4.2;
-  const height = [5.4, 6.5, 5.8, 7.0, 5.2][i];
-  box(scene, `Building ${i}`, [x, 6.5, height / 2], [width, 2.1, height], mats.buildings[i % 4]);
-  const cols = Math.max(2, Math.floor(width / 0.9));
-  const rows = Math.max(2, Math.floor(height / 1.05) - 1);
-  for (let row = 0; row < rows; row++) for (let col = 0; col < cols; col++) {
-    const wx = x - width / 2 + (col + 0.5) * width / cols;
-    box(scene, 'Window', [wx, 5.43, 0.85 + row * 1.05], [0.42, 0.045, 0.55], mats.window);
+const world = new THREE.Group();
+scene.add(world);
+addBox(world, 'Paving', [0, 0.5, -0.2], [42, 38, 0.35], palette.paving, 0.04);
+addBox(world, 'Cobbled road', [0, -5, -0.01], [40, 10, 0.10], palette.road, 0.02);
+
+const facades = [
+  { x: -10.2, width: 7, height: 7.6, frontY: 6, wall: palette.paleStone, columns: 2 },
+  { x: 0, width: 13, height: 9.4, frontY: 6, wall: palette.stone, columns: 4 },
+  { x: 10, width: 7, height: 7.2, frontY: 6, wall: palette.paleStone, columns: 2 }
+];
+
+facades.forEach((b, bi) => {
+  addBox(world, 'Georgian house ' + (bi + 1), [b.x, b.frontY + 0.85, b.height / 2],
+    [b.width, 1.7, b.height], b.wall, 0.07);
+  addBox(world, 'Plinth ' + (bi + 1), [b.x, b.frontY - 0.02, 0.55],
+    [b.width + 0.18, 0.28, 0.65], palette.brick, 0.03);
+  addBox(world, 'Cornice ' + (bi + 1), [b.x, b.frontY - 0.05, b.height - 0.1],
+    [b.width + 0.3, 0.3, 0.22], palette.paleStone, 0.02);
+  addBox(world, 'Slate fascia ' + (bi + 1), [b.x, b.frontY + 0.85, b.height + 0.2],
+    [b.width + 0.5, 2.05, 0.45], palette.roof, 0.04);
+  for (let row = 0; row < 3; row++) {
+    for (let col = 0; col < b.columns; col++) {
+      const x = bi === 1 ? b.x - 4.7 + col * 3.1 : b.x - 1.8 + col * 3.6;
+      const z = [2.25, 4.55, 6.85][row];
+      const blind = bi === 1 && row === 1 && col === 3;
+      addWindow(world, x, z, b.frontY - 0.06, 'Facade ' + (bi + 1) + ' window ' + row + '-' + col, blind);
+    }
   }
 });
-for (const x of [-8.2, -3, 3, 8.2]) {
-  box(scene, 'Tree trunk', [x, 3.8, 0.68], [0.2, 0.2, 1.35], mats.trunk);
-  ball(scene, 'Tree crown', [x, 3.8, 1.55], [0.65, 0.58, 0.7], mats.leaf);
+
+const brickWindow = { x: -1.6, z: 4.55, y: 5.55 };
+const bricks = [];
+for (let row = 0; row < 3; row++) for (let col = 0; col < 2; col++) {
+  const end = new THREE.Vector3(
+    brickWindow.x - 0.21 + col * 0.42,
+    brickWindow.y,
+    brickWindow.z - 0.47 + row * 0.44
+  );
+  const mesh = addBox(world, 'Animated tax brick ' + (row * 2 + col + 1),
+    [end.x + 2.2, end.y, end.z - 1.6], [0.4, 0.16, 0.38],
+    (row + col) % 2 ? palette.brick2 : palette.brick, 0.018);
+  bricks.push({ mesh, start: mesh.position.clone(), end });
 }
 
-// A Three.js-only previs character mirrors the Blender blocking proportions.
+const ledger = new THREE.Group();
+scene.add(ledger);
+addBox(ledger, 'Assessor table', [2.7, -1, 0.78], [4, 2.1, 0.22], palette.timber, 0.08);
+for (const x of [1, 4.4]) for (const y of [-1.8, -0.2]) {
+  addBox(ledger, 'Table leg', [x, y, 0.34], [0.16, 0.16, 0.75], palette.timber, 0.02);
+}
+addBox(ledger, 'Ledger leather cover', [2.45, -0.95, 0.94], [1.45, 1.15, 0.12], palette.leather, 0.025);
+addBox(ledger, 'Ledger page', [2.45, -0.92, 1.015], [1.27, 1.02, 0.025], palette.parchment, 0.01);
+addBox(ledger, 'Ledger fold', [2.45, -0.92, 1.035], [0.025, 1.02, 0.02], palette.leather, 0.005);
+for (let row = 0; row < 5; row++) {
+  addBox(ledger, 'Ledger ruled line', [2.45, -1.30 + row * 0.18, 1.052],
+    [0.86, 0.012, 0.008], palette.ink, 0.002);
+}
+const coins = [];
+for (let i = 0; i < 9; i++) {
+  const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.105, 0.105, 0.035, 28), palette.brass);
+  coin.position.set(3.75 + (i % 3) * 0.24, -1.20 + Math.floor(i / 3) * 0.25,
+    0.91 + Math.floor(i / 3) * 0.035);
+  coin.rotation.x = Math.PI / 2;
+  coin.castShadow = true;
+  ledger.add(coin);
+  coins.push(coin);
+}
+
+for (const x of [-8.8, 8.6]) {
+  addBox(world, 'Lamp post', [x, -1.2, 2.25], [0.10, 0.10, 4.4], palette.timber);
+  addBox(world, 'Lamp arm', [x + 0.34, -1.2, 4.23], [0.72, 0.10, 0.10], palette.timber);
+  addBox(world, 'Gas lantern', [x + 0.67, -1.2, 4.0], [0.37, 0.37, 0.55], palette.lamp);
+}
+
 const actor = new THREE.Group();
 scene.add(actor);
-const torso = box(actor, 'Torso', [0, 0, 1.48], [0.74, 0.48, 0.86], mats.primary);
-const head = ball(actor, 'Head', [0, -0.015, 2.32], [0.47, 0.43, 0.48], mats.skin);
-ball(actor, 'Hair', [0, 0.005, 2.63], [0.49, 0.44, 0.24], mats.dark);
-for (const x of [-0.16, 0.16]) {
-  ball(actor, 'Eye white', [x, -0.405, 2.34], [0.075, 0.045, 0.105], mats.white);
-  ball(actor, 'Eye pupil', [x, -0.448, 2.33], [0.035, 0.024, 0.055], mats.dark);
+actor.position.set(-2.6, -0.8, 0);
+addBox(actor, 'Host coat', [0, 0, 1.35], [0.68, 0.44, 0.9], palette.coat, 0.12);
+addSphere(actor, 'Host head', [0, -0.01, 2.22], [0.43, 0.42, 0.48], palette.skin);
+addSphere(actor, 'Host hair', [0, 0, 2.52], [0.45, 0.43, 0.22], palette.timber);
+for (const x of [-0.14, 0.14]) {
+  addSphere(actor, 'Eye', [x, -0.39, 2.26], [0.055, 0.035, 0.08], palette.ink);
 }
-ball(actor, 'Mouth', [0, -0.433, 2.12], [0.09, 0.025, 0.025], mats.dark);
-const limbs = [];
-for (const [side, x, direction] of [['L', -0.43, 1], ['R', 0.43, -1]]) {
+addSphere(actor, 'Coat button', [0, -0.24, 1.56], [0.055, 0.035, 0.055], palette.coatTrim);
+const armPivots = [];
+for (const x of [-0.4, 0.4]) {
   const pivot = new THREE.Group();
-  pivot.position.set(x, 0, 1.82);
+  pivot.position.set(x, 0, 1.68);
   actor.add(pivot);
-  ball(pivot, `Arm ${side}`, [0, 0, -0.38], [0.145, 0.16, 0.46], mats.primary);
-  ball(pivot, `Hand ${side}`, [0, -0.015, -0.76], [0.15, 0.15, 0.15], mats.skin);
-  limbs.push({ pivot, direction, phase: 0 });
+  addSphere(pivot, 'Sleeve', [0, 0, -0.35], [0.14, 0.16, 0.42], palette.coat);
+  armPivots.push(pivot);
 }
-for (const [side, x, direction] of [['L', -0.2, -1], ['R', 0.2, 1]]) {
+const legPivots = [];
+for (const x of [-0.18, 0.18]) {
   const pivot = new THREE.Group();
-  pivot.position.set(x, 0, 1.08);
+  pivot.position.set(x, 0, 0.94);
   actor.add(pivot);
-  ball(pivot, `Leg ${side}`, [0, 0, -0.36], [0.18, 0.19, 0.46], mats.accent);
-  ball(pivot, `Shoe ${side}`, [0, -0.12, -0.72], [0.18, 0.28, 0.15], mats.dark);
-  limbs.push({ pivot, direction, phase: Math.PI });
+  addSphere(pivot, 'Trouser leg', [0, 0, -0.32], [0.16, 0.17, 0.4], palette.coatTrim);
+  addBox(pivot, 'Boot', [0, -0.11, -0.65], [0.2, 0.28, 0.14], palette.shoe, 0.04);
+  legPivots.push(pivot);
 }
 
-const car = new THREE.Group();
-scene.add(car);
-box(car, 'Car body', [0, 0, 0.45], [1.55, 0.78, 0.46], mat('#e94e27'));
-box(car, 'Cabin', [-0.08, 0, 0.82], [0.83, 0.68, 0.42], mat('#477f91'));
-for (const x of [-0.48, 0.48]) for (const y of [-0.34, 0.34]) ball(car, 'Wheel', [x, y, 0.2], [0.19, 0.12, 0.19], mat('#20252b'));
+const cameraKeys = [
+  [0, [0, -18, 7], [0, 5, 4.3], 38],
+  [5, [-4, -11, 5.2], [-4, 5, 4.2], 52],
+  [10, [-2.6, -8, 2.6], [-2.6, -0.8, 1.55], 54],
+  [15, [0, -10, 5.8], [0, 5, 5], 51],
+  [20, [-1.6, -7, 5], [-1.6, 5, 4.55], 69],
+  [25, [-1.6, -5.7, 4.7], [-1.6, 5, 4.55], 82],
+  [30, [0, -13, 6.6], [0, 5, 4.4], 43],
+  [35, [2.7, -5.8, 8.4], [2.7, -1, 0.9], 57],
+  [40, [0, -15, 7.1], [0, 5, 5], 41],
+  [45, [3.8, -8, 4.6], [3.8, 5, 4.1], 57],
+  [50, [0, -17, 6.3], [0, 5, 4.4], 39],
+  [55, [0, -19, 8.2], [0, 5, 4.4], 36]
+];
 
-const titleCanvas = document.createElement('canvas');
-titleCanvas.width = 1024; titleCanvas.height = 160;
-const ctx = titleCanvas.getContext('2d');
-ctx.fillStyle = 'rgba(13, 27, 39, 0.78)';
-ctx.fillRect(80, 18, 864, 124);
-ctx.fillStyle = '#fff0ce';
-ctx.font = '800 58px system-ui';
-ctx.textAlign = 'center';
-ctx.textBaseline = 'middle';
-ctx.fillText('SHORTFORGE', 512, 82);
-const titleTexture = new THREE.CanvasTexture(titleCanvas);
-const titleMesh = new THREE.Mesh(new THREE.PlaneGeometry(6.3, 0.98), new THREE.MeshBasicMaterial({ map: titleTexture, transparent: true, depthWrite: false }));
-titleMesh.position.set(0, -0.4, 4.65);
-titleMesh.rotation.x = Math.PI / 2;
-scene.add(titleMesh);
+const titleOverlay = document.createElement('div');
+titleOverlay.className = 'title-overlay';
+titleOverlay.textContent = 'THE WINDOW TAX';
+host.appendChild(titleOverlay);
 
-const clock = new THREE.Clock();
-let running = true;
 let elapsed = 0;
-let travel = 0.45;
-let cameraDistance = 13.2;
+let running = true;
+let cameraDistance = 1;
+let actorTravel = 0.5;
+let lastTime = performance.now();
+
+function smoothstep(v) { return v * v * (3 - 2 * v); }
+function updateCamera(time) {
+  let index = 0;
+  while (index < cameraKeys.length - 1 && time > cameraKeys[index + 1][0]) index++;
+  const a = cameraKeys[index];
+  const b = cameraKeys[Math.min(index + 1, cameraKeys.length - 1)];
+  const u = b[0] === a[0] ? 0 : smoothstep(THREE.MathUtils.clamp((time - a[0]) / (b[0] - a[0]), 0, 1));
+  const pA = new THREE.Vector3(...a[1]), pB = new THREE.Vector3(...b[1]);
+  const tA = new THREE.Vector3(...a[2]), tB = new THREE.Vector3(...b[2]);
+  camera.position.lerpVectors(pA, pB, u);
+  camera.position.y *= cameraDistance;
+  const target = new THREE.Vector3().lerpVectors(tA, tB, u);
+  const lens = THREE.MathUtils.lerp(a[3], b[3], u);
+  camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(24 / (2 * lens)));
+  camera.updateProjectionMatrix();
+  camera.lookAt(target);
+}
+
+function renderFrame() {
+  const now = performance.now();
+  const delta = Math.min((now - lastTime) / 1000, 0.05);
+  lastTime = now;
+  if (running) elapsed = Math.min(60, elapsed + delta);
+  const t = elapsed;
+
+  actor.visible = t < 16;
+  actor.position.x = -2.6 + Math.sin(t * 0.7) * actorTravel;
+  actor.position.z = Math.abs(Math.sin(t * Math.PI * 2)) * 0.07;
+  actor.rotation.z = Math.sin(t * 1.15) * 0.035;
+  armPivots.forEach((p, i) => { p.rotation.x = Math.sin(t * 5 + i * Math.PI) * 0.34; });
+  legPivots.forEach((p, i) => { p.rotation.x = Math.sin(t * 6 + i * Math.PI) * 0.52; });
+
+  const brickProgress = THREE.MathUtils.clamp((t - 18) / 8, 0, 1);
+  bricks.forEach(({ mesh, start, end }) => {
+    mesh.visible = t >= 18;
+    mesh.position.lerpVectors(start, end, smoothstep(brickProgress));
+  });
+  coins.forEach((coin, i) => { coin.rotation.z = Math.sin(t * 1.8 + i) * 0.08; });
+  titleOverlay.style.opacity = t < 4 ? String(1 - Math.max(0, t - 2.8) / 1.2) : '0';
+  updateCamera(t);
+  renderer.render(scene, camera);
+
+  const scrubber = document.querySelector('#timeline');
+  const readout = document.querySelector('#timeReadout');
+  if (scrubber && document.activeElement !== scrubber) scrubber.value = String(t);
+  if (readout) {
+    const seconds = Math.floor(t % 60);
+    readout.textContent = '0:' + String(seconds).padStart(2, '0');
+  }
+  if (t >= 60) {
+    running = false;
+    document.querySelector('#play').textContent = 'Replay';
+  }
+  requestAnimationFrame(renderFrame);
+}
+
 function resize() {
   const width = host.clientWidth;
   const height = host.clientHeight;
@@ -145,27 +294,26 @@ function resize() {
 }
 new ResizeObserver(resize).observe(host);
 resize();
-
-function animate() {
-  requestAnimationFrame(animate);
-  const delta = Math.min(clock.getDelta(), 0.05);
-  if (running) elapsed += delta;
-  const t = elapsed;
-  actor.position.x = Math.sin(t * 0.55) * travel;
-  actor.position.z = Math.abs(Math.sin(t * Math.PI * 2)) * 0.08;
-  actor.rotation.z = Math.sin(t * 1.3) * 0.035;
-  limbs.forEach(({ pivot, direction, phase }) => { pivot.rotation.x = Math.sin(t * Math.PI * 2 + phase) * 0.72 * direction; });
-  car.position.set(-10.5 + ((t * 2.2) % 21), 1.7, 0);
-  camera.position.set(0.12 * Math.sin(t * 0.18), -cameraDistance, 4.2 + Math.sin(t * 0.25) * 0.12);
-  camera.lookAt(0, 1.1, 2.0);
-  renderer.render(scene, camera);
-}
-animate();
+requestAnimationFrame(renderFrame);
 
 document.querySelector('#play').addEventListener('click', (event) => {
+  if (elapsed >= 60) elapsed = 0;
   running = !running;
   event.currentTarget.textContent = running ? 'Pause' : 'Play';
 });
-document.querySelector('#restart').addEventListener('click', () => { elapsed = 0; running = true; document.querySelector('#play').textContent = 'Pause'; });
-document.querySelector('#distance').addEventListener('input', (event) => { cameraDistance = Number(event.target.value); });
-document.querySelector('#travel').addEventListener('input', (event) => { travel = Number(event.target.value); });
+document.querySelector('#restart').addEventListener('click', () => {
+  elapsed = 0;
+  running = true;
+  document.querySelector('#play').textContent = 'Pause';
+});
+document.querySelector('#distance').addEventListener('input', (event) => {
+  cameraDistance = Number(event.target.value);
+});
+document.querySelector('#travel').addEventListener('input', (event) => {
+  actorTravel = Number(event.target.value);
+});
+document.querySelector('#timeline').addEventListener('input', (event) => {
+  elapsed = Number(event.target.value);
+  running = false;
+  document.querySelector('#play').textContent = 'Play';
+});
