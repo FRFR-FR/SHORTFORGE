@@ -107,6 +107,16 @@ The default run is metadata-only. The manual **Actions → SHORTFORGE reference 
 
 See `docs/CHANNEL_REFERENCE_LAB.md` for installation, per-frame metrics and rights requirements, and `skills/shortforge-reference-lab/SKILL.md` for the single-topic original video workflow. The companion Claude tutorial workflow is attributed in `docs/CLAUDE_TUTORIAL_ADAPTATION.md`.
 
+## First original Reference Lab test: Window Tax
+
+The first sample episode is an original 60-second history short titled **Britain Once Taxed Sunlight**. Its authored project config is `production/window-tax-project.json`; the render-trigger config is `production/launch-short.json`. The Three.js previs is in `preview/`, and the final render remains Blender + FFmpeg at 720×1280 / 30 fps.
+
+- Script and fact notes: `production/window-tax-script.md`
+- Timed captions: `production/window-tax.srt`
+- Visual, screen, animation and delivery checks: `production/window-tax-production-checklist.md`
+
+Historical nuance is intentional: some owners closed windows in response to the tax, but a blank window is not automatically proof of tax avoidance; symmetry and architectural design also matter.
+
 ## Repository map
 
 ```text
