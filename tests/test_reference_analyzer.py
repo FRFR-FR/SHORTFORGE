@@ -3,10 +3,12 @@
 from __future__ import annotations
 import csv
 import tempfile
+import sys
 from pathlib import Path
 import cv2
 import numpy as np
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from src.qa.analyze_reference_video import analyze
 
 
