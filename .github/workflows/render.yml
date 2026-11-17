@@ -105,7 +105,11 @@ jobs:
       - name: Prepare selected project profile
         run: |
           mkdir -p "$RUNNER_TEMP/shortforge" out
-          python3 scripts/prepare_project.py --quality "$QUALITY" --output "$RUNNER_TEMP/shortforge/project.json"
+          if [[ "$GITHUB_EVENT_NAME" == "push" && -f production/launch-short.json ]]; then
+            python3 scripts/prepare_project.py --project production/launch-short.json --output "$RUNNER_TEMP/shortforge/project.json"
+          else
+            python3 scripts/prepare_project.py --quality "$QUALITY" --output "$RUNNER_TEMP/shortforge/project.json"
+          fi
           python3 scripts/validate_project.py "$RUNNER_TEMP/shortforge/project.json"
 
       - name: Cache Kokoro Python packages
