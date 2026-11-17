@@ -92,19 +92,34 @@ Automated pixel checks cannot judge story quality, model anatomy, emotional perf
 
 Reference research is for high-level format analysis only: hooks, average shot duration, pacing, framing, captions, visual density, tone and sound design. Do not reproduce another creator's script, characters, artwork, exact scene order, signature assets or distinctive shot sequence. Use original characters, environments, dialogue and licensed assets. See `docs/REFERENCE_RESEARCH.md`.
 
+## YouTube Reference Lab (yt-dlp)
+
+The optional research stack lives in `requirements-research.txt` so it does not add computer-vision dependencies to the Blender renderer.
+
+Install locally with Python 3.12:
+
+```bash
+python3.12 -m pip install -r requirements-research.txt
+python scripts/research_channel.py --channel-url https://www.youtube.com/@ricksclips3000/videos --top-n 20 --max-candidates 300 --output-dir out/reference-lab
+```
+
+The default run is metadata-only. The manual **Actions → SHORTFORGE reference lab** workflow can rank the channel's accessible uploads by visible view count. Frame-level downloads and measurements are disabled unless the operator attests to ownership or written permission and confirms the use is permitted by platform terms. Temporary source files are deleted after measurement; releases contain only metadata and numeric reports.
+
+See `docs/CHANNEL_REFERENCE_LAB.md` for installation, per-frame metrics and rights requirements, and `skills/shortforge-reference-lab/SKILL.md` for the single-topic original video workflow. The companion Claude tutorial workflow is attributed in `docs/CLAUDE_TUTORIAL_ADAPTATION.md`.
+
 ## Repository map
 
 ```text
 config/                 Project, style-bible and smoke-test configs
 src/blender/avatar_system.py   Reusable 7-emotion / 8-pose humanoid avatars
 src/blender/            Procedural scene builder and direct frame renderer
-src/qa/                 Per-frame analysis and contact-sheet generator
+src/qa/                 Output QA and reference-video frame analyzer
 src/audio/              Optional Kokoro narration adapter
 preview/                Interactive Three.js shot previs
-scripts/                Validation, render orchestration and tests
+scripts/                Validation, render orchestration, channel research and tests
 prompts/                Storyboard and review prompts
-skills/                 ChatGPT workflow skill
-.github/workflows/      Manual GitHub Actions render workflow
+skills/                 ChatGPT production and reference-lab skills
+.github/workflows/      Render and reference-lab GitHub Actions workflows
 docs/                   Architecture, schema, research and review guides
 ```
 
