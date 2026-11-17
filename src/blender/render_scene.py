@@ -425,7 +425,7 @@ def build_window_tax_set(scene, avatar_root, total_frames, fps):
         obj.hide_render = False
         obj.keyframe_insert(data_path="hide_render", frame=1)
         obj.hide_render = True
-        obj.keyframe_insert(data_path="hide_render", frame=6 * fps)
+        obj.keyframe_insert(data_path="hide_render", frame=16 * fps)
 
     add_area_light("Window tax | warm key", (-7.0, -10.0, 13.5), (0.0, 4.0, 4.0),
                    1700, (1.0, 0.72, 0.48), 9.0)
@@ -477,7 +477,7 @@ def create_window_tax_camera(scene, project, total_frames, fps):
                 key.handle_right_type = "AUTO_CLAMPED"
 
     title = bpy.data.curves.new("Window tax title typography", type="FONT")
-    title.body = "THE WINDOW TAX"
+    title.body = "TAXED SUNLIGHT"
     title.align_x = "CENTER"
     title.size = 0.40
     title.extrude = 0.001
