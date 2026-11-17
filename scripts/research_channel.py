@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import tempfile
 import zipfile
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 import yt_dlp
@@ -79,6 +80,7 @@ def main():
         "channel_title": info.get("title"),
         "channel_id": info.get("id"),
         "channel_url": a.channel_url,
+        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "candidates_returned": len(entries),
         "selected_count": len(chosen),
         "ranking": "view_count descending among returned accessible uploads",
