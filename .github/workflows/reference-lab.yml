@@ -70,6 +70,8 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements-research.txt
           yt-dlp --version
+          python -m py_compile scripts/research_channel.py src/qa/analyze_reference_video.py tests/test_reference_analyzer.py
+          python tests/test_reference_analyzer.py
 
       - name: Rank channel uploads and optionally analyze frames
         run: |
