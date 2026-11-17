@@ -1,0 +1,119 @@
+name: SHORTFORGE reference lab
+
+on:
+  workflow_dispatch:
+    inputs:
+      channel_url:
+        description: YouTube channel videos URL
+        type: string
+        required: true
+        default: https://www.youtube.com/@ricksclips3000/videos
+      top_n:
+        description: Number of top videos to rank
+        type: number
+        required: true
+        default: 20
+      max_candidates:
+        description: Maximum accessible uploads to inspect for ranking
+        type: number
+        required: true
+        default: 300
+      download_and_analyze:
+        description: Download and measure frames (only with rights and platform permission)
+        type: boolean
+        required: true
+        default: false
+      rights_attestation:
+        description: Exact rights attestation from docs/CHANNEL_REFERENCE_LAB.md
+        type: string
+        required: false
+        default: ""
+      publish_report:
+        description: Publish compact metadata/measurement reports as a GitHub Release
+        type: boolean
+        required: true
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: shortforge-reference-lab-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  research:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    env:
+      CHANNEL_URL: ${{ inputs.channel_url }}
+      TOP_N: ${{ inputs.top_n }}
+      MAX_CANDIDATES: ${{ inputs.max_candidates }}
+      DOWNLOAD_AND_ANALYZE: ${{ inputs.download_and_analyze }}
+      RIGHTS_ATTESTATION: ${{ inputs.rights_attestation }}
+      PUBLISH_REPORT: ${{ inputs.publish_report }}
+    steps:
+      - name: Check out SHORTFORGE
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-research.txt
+
+      - name: Install FFmpeg and research dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-research.txt
+          yt-dlp --version
+
+      - name: Rank channel uploads and optionally analyze frames
+        run: |
+          mkdir -p out/reference-lab
+          args=(
+            --channel-url "$CHANNEL_URL"
+            --top-n "$TOP_N"
+            --max-candidates "$MAX_CANDIDATES"
+            --output-dir out/reference-lab
+          )
+          if [[ "$DOWNLOAD_AND_ANALYZE" == "true" ]]; then
+            required='I own or have written permission to download and analyze every selected video, and this use is permitted by the platform terms.'
+            if [[ "$RIGHTS_ATTESTATION" != "$required" ]]; then
+              echo "::error::Video downloads require the exact rights and platform-permission attestation."
+              exit 2
+            fi
+            args+=(--download-and-analyze --rights-attestation "$RIGHTS_ATTESTATION")
+          fi
+          python scripts/research_channel.py "${args[@]}"
+
+      - name: Publish compact research report
+        if: env.PUBLISH_REPORT == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="reference-lab-$GITHUB_RUN_NUMBER-$GITHUB_RUN_ATTEMPT"
+          gh release create "$TAG" \
+            out/reference-lab/top20-metadata.json \
+            out/reference-lab/analysis-summary.json \
+            out/reference-lab/research-results.zip \
+            --title "SHORTFORGE Reference Lab $GITHUB_RUN_NUMBER" \
+            --notes "Metadata snapshot and numeric frame-measurement report. Source videos and extracted frames are not included."
+          echo "Report release: https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Write run summary
+        if: always()
+        run: |
+          {
+            echo "## SHORTFORGE Reference Lab"
+            echo "- Channel: $CHANNEL_URL"
+            echo "- Ranked videos: $TOP_N"
+            echo "- Download and frame analysis enabled: $DOWNLOAD_AND_ANALYZE"
+            echo "- Source video files are temporary and are not published."
+            if [ -f out/reference-lab/analysis-summary.json ]; then
+              cat out/reference-lab/analysis-summary.json
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
