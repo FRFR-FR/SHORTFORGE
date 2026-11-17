@@ -92,8 +92,10 @@ jobs:
           ffmpeg -version | head -n 1
           ffprobe -version | head -n 1
 
-      - name: Run Python tests
-        run: python3 -m unittest discover -s tests -v
+      - name: Compile Python entry points and run tests
+        run: |
+          python3 -m py_compile scripts/prepare_project.py scripts/render.py src/blender/render_scene.py
+          python3 -m unittest discover -s tests -v
 
       - name: Build optional Three.js previs
         working-directory: preview
