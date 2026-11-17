@@ -220,7 +220,7 @@ const cameraKeys = [
 
 const titleOverlay = document.createElement('div');
 titleOverlay.className = 'title-overlay';
-titleOverlay.textContent = 'THE WINDOW TAX';
+titleOverlay.textContent = 'TAXED SUNLIGHT';
 host.appendChild(titleOverlay);
 
 let elapsed = 0;
