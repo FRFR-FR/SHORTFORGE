@@ -135,6 +135,32 @@ def analyze(video: Path, out_dir: Path, analysis_width: int = 360):
     ]
     metrics = {key: dist([r[key] for r in rows]) for key in metric_keys}
     duration = len(rows) / fps
+    # A compact opening/middle/ending comparison helps reviewers see how the
+    # visual rhythm evolves, without producing a frame-by-frame shot recipe.
+    n = len(rows)
+    section_ranges = {
+        "opening_first_second": (0, min(n, max(1, round(fps)))),
+        "first_third": (0, max(1, n // 3)),
+        "middle_third": (n // 3, max(n // 3 + 1, (2 * n) // 3)),
+        "final_third": ((2 * n) // 3, n),
+    }
+    temporal_sections = {}
+    section_metrics = [
+        "camera_translation_px_proxy", "optical_flow_mean_px",
+        "optical_flow_p95_px", "edge_density_percent",
+        "mean_luminance_0_255", "mean_saturation_0_255",
+        "sharpness_laplacian_variance",
+    ]
+    for name, (start, end) in section_ranges.items():
+        subset = rows[start:end]
+        temporal_sections[name] = {
+            "frame_range_1_based": [start + 1, end],
+            "time_range_seconds": [round(start / fps, 4), round(end / fps, 4)],
+            "metrics": {
+                key: dist([row[key] for row in subset])
+                for key in section_metrics
+            },
+        }
     summary = {
         "source_id": video.stem,
         "source_video_retained": False,
@@ -150,6 +176,7 @@ def analyze(video: Path, out_dir: Path, analysis_width: int = 360):
         "estimated_shot_count": len(cuts) + 1,
         "estimated_average_shot_seconds": round(duration / (len(cuts) + 1), 4),
         "metrics": metrics,
+        "temporal_sections": temporal_sections,
         "limitations": [
             "Global affine camera movement is a proxy; subject motion, parallax and cuts can confound it.",
             "Optical flow measures all visible pixel movement, not camera movement alone.",
