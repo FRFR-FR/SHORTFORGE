@@ -86,7 +86,7 @@ def download(url: str, target: Path, minimum_bytes: int, magic: bytes = b"", ret
             # Decode it before applying the .blend signature and minimum-size checks.
             with partial.open("rb") as stream:
                 prefix = stream.read(4 if magic else 0)
-            if magic and prefix == b"\\x28\\xb5\\x2f\\xfd":
+            if magic and prefix == b"\x28\xb5\x2f\xfd":
                 decoded = partial.with_name(partial.name + ".decoded")
                 try:
                     with decoded.open("wb") as out:
