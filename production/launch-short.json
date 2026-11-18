@@ -158,5 +158,5 @@
       "character_drift": 0
     }
   ],
-  "build_revision": "github-actions-workflow-repair-v2"
+  "build_revision": "github-actions-preflight-v3"
 }
