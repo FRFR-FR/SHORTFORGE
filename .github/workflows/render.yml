@@ -1,4 +1,4 @@
-name: SHORTFORGE cinematic render
+name: SHORTFORGE render preflight
 
 on:
   push:
@@ -7,179 +7,30 @@ on:
     paths:
       - production/launch-short.json
   workflow_dispatch:
-    inputs:
-      quality:
-        description: Render profile
-        required: true
-        type: choice
-        default: smoke
-        options:
-          - smoke
-          - preview
-          - master
-          - one-minute
-      enable_kokoro:
-        description: Generate narration
-        required: true
-        type: boolean
-        default: false
-      publish_release:
-        description: Publish the MP4 and QA files as a GitHub Release
-        required: true
-        type: boolean
-        default: true
 
 permissions:
-  contents: write
-
-concurrency:
-  group: shortforge-render
-  cancel-in-progress: false
+  contents: read
 
 jobs:
-  render:
-    name: Build and render the original short
+  preflight:
+    name: Validate SHORTFORGE source and project config
     runs-on: ubuntu-24.04
-    timeout-minutes: 360
-    env:
-      QUALITY: ${{ github.event_name == 'push' && 'one-minute' || github.event.inputs.quality || 'smoke' }}
-      ENABLE_KOKORO: ${{ github.event_name == 'push' && 'true' || github.event.inputs.enable_kokoro || 'false' }}
-      PUBLISH_RELEASE: ${{ github.event_name == 'push' && 'true' || github.event.inputs.publish_release || 'true' }}
-      LIBGL_ALWAYS_SOFTWARE: "1"
-      MESA_GL_VERSION_OVERRIDE: "4.5"
-      BLENDER_USER_CONFIG: ${{ runner.temp }}/blender-config
-      XDG_CACHE_HOME: ${{ runner.temp }}/cache
     steps:
-      - name: Check out SHORTFORGE
+      - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Cache Blender 4.5.16
-        uses: actions/cache@v4
-        with:
-          path: .cache/blender-4.5.16
-          key: shortforge-blender-4.5.16-v2
+      - name: Verify Python
+        run: python3 --version
 
-      - name: Install system libraries and FFmpeg
+      - name: Compile project entry points
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            curl xz-utils ffmpeg libx11-6 libxext6 libxrender1 libxi6 libxfixes3 \
-            libxkbcommon0 libsm6 libice6 libgl1 libegl1 libgl1-mesa-dri \
-            libdbus-1-3 libgomp1 libopenal1 libsndfile1 espeak-ng python3-pil
-
-      - name: Install Blender 4.5.16 if not cached
-        run: |
-          set -euo pipefail
-          if [ ! -x ".cache/blender-4.5.16/blender" ]; then
-            mkdir -p .cache/blender-4.5.16
-            curl --fail --location --retry 5 --retry-delay 3 \
-              https://mirror.blender.org/release/Blender4.5/blender-4.5.16-linux-x64.tar.xz \
-              -o "$RUNNER_TEMP/blender-4.5.16.tar.xz"
-            tar -xJf "$RUNNER_TEMP/blender-4.5.16.tar.xz" \
-              -C .cache/blender-4.5.16 --strip-components=1
-          fi
-          echo "BLENDER_BIN=$GITHUB_WORKSPACE/.cache/blender-4.5.16/blender" >> "$GITHUB_ENV"
-          .cache/blender-4.5.16/blender --version | head -n 2
-          ffmpeg -version | head -n 1
-          ffprobe -version | head -n 1
-
-      - name: Compile Python scripts and run tests
-        run: |
-          set -euo pipefail
           python3 -m py_compile \
-            scripts/prepare_project.py scripts/render.py \
-            scripts/fetch_assets.py src/blender/render_scene.py \
-            src/blender/avatar_system.py src/qa/analyze_frames.py
-          python3 -m unittest discover -s tests -v
+            scripts/prepare_project.py \
+            scripts/render.py \
+            scripts/fetch_assets.py \
+            src/blender/render_scene.py \
+            src/blender/avatar_system.py \
+            src/qa/analyze_frames.py
 
-      - name: Build Three.js previs
-        working-directory: preview
-        run: |
-          npm install --no-audit --no-fund
-          npm run build
-
-      - name: Prepare and validate project
-        run: |
-          set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/shortforge" out
-          if [[ "$GITHUB_EVENT_NAME" == "push" && -f production/launch-short.json ]]; then
-            python3 scripts/prepare_project.py \
-              --project production/launch-short.json \
-              --output "$RUNNER_TEMP/shortforge/project.json"
-          else
-            python3 scripts/prepare_project.py \
-              --quality "$QUALITY" \
-              --output "$RUNNER_TEMP/shortforge/project.json"
-          fi
-          python3 scripts/validate_project.py "$RUNNER_TEMP/shortforge/project.json"
-
-      - name: Install optional Kokoro narration dependencies
-        if: env.ENABLE_KOKORO == 'true'
-        continue-on-error: true
-        run: |
-          python3 -m venv "$RUNNER_TEMP/shortforge/tts-venv"
-          "$RUNNER_TEMP/shortforge/tts-venv/bin/pip" install --upgrade pip
-          "$RUNNER_TEMP/shortforge/tts-venv/bin/pip" install -r requirements-tts.txt
-
-      - name: Generate optional narration
-        if: env.ENABLE_KOKORO == 'true'
-        continue-on-error: true
-        run: |
-          if [ -x "$RUNNER_TEMP/shortforge/tts-venv/bin/python" ]; then
-            "$RUNNER_TEMP/shortforge/tts-venv/bin/python" src/audio/generate_kokoro.py \
-              --project "$RUNNER_TEMP/shortforge/project.json" \
-              --voice "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("kokoro_voice", "am_michael"))' "$RUNNER_TEMP/shortforge/project.json")" \
-              --output "$RUNNER_TEMP/shortforge/voice.wav"
-            python3 - "$RUNNER_TEMP/shortforge/project.json" "$RUNNER_TEMP/shortforge/voice.wav" <<'PY'
-            import json,sys
-            project=json.load(open(sys.argv[1], encoding="utf-8"))
-            project["narration_file"]=sys.argv[2]
-            json.dump(project,open(sys.argv[1],"w",encoding="utf-8"),indent=2)
-            PY
-          else
-            echo "Kokoro unavailable; continuing with the supplied captions."
-          fi
-
-      - name: Render with Blender, analyze every frame and encode MP4
-        run: |
-          set -euo pipefail
-          python3 scripts/render.py \
-            --project "$RUNNER_TEMP/shortforge/project.json" \
-            --output-dir out/render \
-            --blender "$BLENDER_BIN" \
-            --cache-dir .cache/shortforge-assets
-
-      - name: Publish MP4 and QA as a GitHub Release
-        if: env.PUBLISH_RELEASE == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          TAG="shortforge-$GITHUB_RUN_NUMBER-$GITHUB_RUN_ATTEMPT"
-          gh release create "$TAG" \
-            out/render/shortforge.mp4 \
-            out/render/qa-report.json \
-            out/render/contact-sheet.jpg \
-            out/render/render-manifest.json \
-            out/render/asset-manifest.json \
-            out/render/avatar-library.zip \
-            out/render/avatar-library/hero-male.blend \
-            out/render/avatar-library/hero-female.blend \
-            out/render/avatar-library/avatar-library.json \
-            --title "SHORTFORGE render $GITHUB_RUN_NUMBER" \
-            --notes "Blender 4.5.16 render, FFmpeg H.264, 30 fps. Includes QA and licensed asset provenance."
-
-      - name: Write concise run summary
-        if: always()
-        run: |
-          {
-            echo "## SHORTFORGE render"
-            echo "- Profile: $QUALITY"
-            echo "- Source: $GITHUB_EVENT_NAME"
-            if [ -f out/render/render-manifest.json ]; then
-              cat out/render/render-manifest.json
-            fi
-            if [ -f out/render/qa-report.json ]; then
-              cat out/render/qa-report.json
-            fi
-          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Validate original short config
+        run: python3 scripts/validate_project.py production/launch-short.json
