@@ -158,5 +158,5 @@
       "character_drift": 0
     }
   ],
-  "build_revision": "full-render-workflow-runner-context-fixed"
+  "build_revision": "zstd-asset-decompression-and-render-dependencies-2026-11-18"
 }
