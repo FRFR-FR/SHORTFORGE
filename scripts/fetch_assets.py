@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import subprocess
 import time
 import urllib.request
 from pathlib import Path
@@ -81,13 +82,39 @@ def download(url: str, target: Path, minimum_bytes: int, magic: bytes = b"", ret
                     if not chunk:
                         break
                     out.write(chunk)
+            # Some Blender mirrors now return a Zstandard-compressed payload.
+            # Decode it before applying the .blend signature and minimum-size checks.
+            with partial.open("rb") as stream:
+                prefix = stream.read(4 if magic else 0)
+            if magic and prefix == b"\\x28\\xb5\\x2f\\xfd":
+                decoded = partial.with_name(partial.name + ".decoded")
+                try:
+                    with decoded.open("wb") as out:
+                        subprocess.run(
+                            ["zstd", "--quiet", "--decompress", "--stdout", str(partial)],
+                            stdout=out,
+                            stderr=subprocess.PIPE,
+                            check=True,
+                            text=False,
+                        )
+                except FileNotFoundError as exc:
+                    raise RuntimeError(
+                        "The downloaded asset is Zstandard-compressed, but the 'zstd' "
+                        "decoder is not installed. Install the system package 'zstd'."
+                    ) from exc
+                except subprocess.CalledProcessError as exc:
+                    detail = exc.stderr.decode("utf-8", errors="replace")[-1200:]
+                    decoded.unlink(missing_ok=True)
+                    raise RuntimeError(f"Unable to decompress Zstandard asset: {detail}") from exc
+                decoded.replace(partial)
+
             size = partial.stat().st_size
             with partial.open("rb") as stream:
                 prefix = stream.read(len(magic)) if magic else b""
             if size < minimum_bytes:
-                raise RuntimeError(f"Downloaded only {size:,} bytes; expected at least {minimum_bytes:,}")
+                raise RuntimeError(f"Downloaded only {size:,} bytes after decompression; expected at least {minimum_bytes:,}")
             if magic and prefix != magic:
-                raise RuntimeError(f"Downloaded file has invalid signature: {prefix!r}")
+                raise RuntimeError(f"Downloaded file has invalid signature after decompression: {prefix!r}")
             partial.replace(target)
             return
         except Exception as exc:
