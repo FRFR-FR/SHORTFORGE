@@ -451,6 +451,7 @@ def create_window_tax_camera(scene, project, total_frames, fps):
         (45, (3.8, -8.0, 4.6), (3.8, 5.0, 4.1), 57.0),
         (50, (0.0, -17.0, 6.3), (0.0, 5.0, 4.4), 39.0),
         (55, (0.0, -19.0, 8.2), (0.0, 5.0, 4.4), 36.0),
+        (60, (0.0, -20.0, 8.6), (0.0, 5.0, 4.4), 35.0),
     ]
     bpy.ops.object.camera_add(location=camera_path[0][1])
     camera = bpy.context.object
