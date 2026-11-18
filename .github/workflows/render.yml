@@ -87,7 +87,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m py_compile \
-            scripts/prepare_project.py scripts/render.py scripts/fetch_assets.py \
+            scripts/prepare_project.py scripts/create_smoke_project.py scripts/render.py scripts/fetch_assets.py \
             src/blender/render_scene.py src/blender/avatar_system.py src/qa/analyze_frames.py
           python3 -m unittest discover -s tests -v
 
@@ -111,6 +111,29 @@ jobs:
               --output "$RUNNER_TEMP/shortforge/project.json"
           fi
           python3 scripts/validate_project.py "$RUNNER_TEMP/shortforge/project.json"
+          python3 scripts/create_smoke_project.py \
+            --project "$RUNNER_TEMP/shortforge/project.json" \
+            --output "$RUNNER_TEMP/shortforge/smoke-project.json"
+          python3 scripts/validate_project.py "$RUNNER_TEMP/shortforge/smoke-project.json"
+
+      - name: Run ten-second Blender smoke render and gate production
+        run: |
+          set -euo pipefail
+          python3 scripts/render.py \
+            --project "$RUNNER_TEMP/shortforge/smoke-project.json" \
+            --output-dir out/smoke \
+            --blender "$BLENDER_BIN" \
+            --cache-dir .cache/shortforge-assets
+          test -s out/smoke/shortforge.mp4
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("out/smoke/qa-report.json").read_text(encoding="utf-8"))
+          assert report["status"] == "passed", report.get("errors")
+          assert report["expected_frames"] == 300, report
+          assert report["rendered_frames"] == 300, report
+          print("SHORTFORGE_SMOKE_QA_PASSED 300/300")
+          PY
 
       - name: Install optional Kokoro narration dependencies
         if: env.ENABLE_KOKORO == 'true'
@@ -162,6 +185,9 @@ jobs:
             out/render/avatar-library/hero-male.blend \
             out/render/avatar-library/hero-female.blend \
             out/render/avatar-library/avatar-library.json \
+            out/smoke/qa-report.json \
+            out/smoke/contact-sheet.jpg \
+            out/smoke/render-manifest.json \
             --title "SHORTFORGE render $GITHUB_RUN_NUMBER" \
             --notes "Blender 4.5.16 render, FFmpeg H.264, 30 fps. Includes QA and licensed asset provenance."
 
@@ -174,6 +200,10 @@ jobs:
             echo "- Source: $GITHUB_EVENT_NAME"
             if [ -f out/render/render-manifest.json ]; then
               cat out/render/render-manifest.json
+            fi
+            if [ -f out/smoke/qa-report.json ]; then
+              echo "### Smoke QA"
+              cat out/smoke/qa-report.json
             fi
             if [ -f out/render/qa-report.json ]; then
               cat out/render/qa-report.json
