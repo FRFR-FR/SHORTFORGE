@@ -56,9 +56,10 @@ jobs:
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            curl xz-utils ffmpeg libx11-6 libxext6 libxrender1 libxi6 libxfixes3 \
+            curl xz-utils zstd ffmpeg libx11-6 libxext6 libxrender1 libxi6 libxfixes3 \
             libxkbcommon0 libsm6 libice6 libgl1 libegl1 libgl1-mesa-dri \
-            libdbus-1-3 libgomp1 libopenal1 libsndfile1 espeak-ng python3-pil
+            libdbus-1-3 libgomp1 libopenal1 libsndfile1 espeak-ng \
+            python3-pil python3-numpy python3-venv python3-pip fonts-dejavu-core fonts-liberation
           mkdir -p "$RUNNER_TEMP/blender-config" "$RUNNER_TEMP/cache"
           echo "BLENDER_USER_CONFIG=$RUNNER_TEMP/blender-config" >> "$GITHUB_ENV"
           echo "XDG_CACHE_HOME=$RUNNER_TEMP/cache" >> "$GITHUB_ENV"
@@ -78,6 +79,9 @@ jobs:
           .cache/blender-4.5.16/blender --version | head -n 2
           ffmpeg -version | head -n 1
           ffprobe -version | head -n 1
+          zstd --version | head -n 1
+          python3 -c "from PIL import Image; print('Pillow:', Image.__version__ if hasattr(Image, '__version__') else 'available')"
+          python3 -c "import numpy; print('NumPy:', numpy.__version__)"
 
       - name: Compile Python scripts and run tests
         run: |
