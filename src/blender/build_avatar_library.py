@@ -15,7 +15,10 @@ def main():
     parser.add_argument("--male", required=True)
     parser.add_argument("--female", required=True)
     parser.add_argument("--output-dir", required=True)
-    args = parser.parse_args()
+    # Blender keeps its own CLI arguments in sys.argv. Only parse values
+    # placed after Blender's explicit "--" separator.
+    argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+    args = parser.parse_args(argv)
     output = Path(args.output_dir).resolve()
     output.mkdir(parents=True, exist_ok=True)
     manifest = avatar_library_manifest()
