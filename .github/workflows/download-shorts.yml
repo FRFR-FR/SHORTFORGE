@@ -12,7 +12,7 @@ permissions:
 jobs:
   download:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     steps:
       - name: Checkout
@@ -24,49 +24,93 @@ jobs:
           ffmpeg: true
           aria2: true
 
-      - name: Prepare optional YouTube cookies
-        env:
-          YOUTUBE_COOKIES_B64: ${{ secrets.YOUTUBE_COOKIES_B64 }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ -n "${YOUTUBE_COOKIES_B64:-}" ]; then
-            printf '%s' "$YOUTUBE_COOKIES_B64" | base64 --decode > youtube-cookies.txt
-            echo "YouTube cookies secret detected."
-          else
-            echo "No YOUTUBE_COOKIES_B64 secret is configured."
-          fi
-
-      - name: Download the three Shorts
-        env:
-          YOUTUBE_COOKIES_B64: ${{ secrets.YOUTUBE_COOKIES_B64 }}
+      - name: Try yt-dlp first
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p downloads
+          failed=0
 
-          COOKIE_ARGS=()
-          if [ -f youtube-cookies.txt ]; then
-            COOKIE_ARGS=(--cookies youtube-cookies.txt)
-          fi
+          for id in X51xe_x5d9I QSFPUmVXv8w QCM2H3T4ooA; do
+            if yt-dlp --no-playlist --retries 2 --fragment-retries 2               --merge-output-format mp4               -o "downloads/$id.%(ext)s"               "https://youtube.com/shorts/$id"; then
+              echo "yt-dlp downloaded $id"
+            else
+              echo "yt-dlp failed for $id; Cobalt fallback will handle it."
+              failed=1
+            fi
+          done
 
-          yt-dlp \
-            --no-playlist \
-            --retries 3 \
-            --fragment-retries 3 \
-            --merge-output-format mp4 \
-            "${COOKIE_ARGS[@]}" \
-            -o "downloads/%(id)s.%(ext)s" \
-            "https://youtube.com/shorts/X51xe_x5d9I" \
-            "https://youtube.com/shorts/QSFPUmVXv8w" \
-            "https://youtube.com/shorts/QCM2H3T4ooA"
+          echo "YTDLP_FAILED=$failed" >> "$GITHUB_ENV"
+
+      - name: Start self-hosted Cobalt fallback
+        if: env.YTDLP_FAILED == '1'
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run -d --name cobalt             -p 9000:9000             -e API_URL="http://127.0.0.1:9000/"             ghcr.io/imputnet/cobalt:11
+
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:9000/ >/dev/null; then
+              echo "Cobalt is ready."
+              exit 0
+            fi
+            sleep 2
+          done
+
+          docker logs cobalt
+          exit 1
+
+      - name: Download failed items with Cobalt
+        if: env.YTDLP_FAILED == '1'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for id in X51xe_x5d9I QSFPUmVXv8w QCM2H3T4ooA; do
+            if compgen -G "downloads/$id.*" > /dev/null; then
+              echo "$id already downloaded by yt-dlp; skipping Cobalt."
+              continue
+            fi
+
+            response=$(curl -fsS               -H "Accept: application/json"               -H "Content-Type: application/json"               -X POST http://127.0.0.1:9000/               --data "{"url":"https://youtube.com/shorts/$id","videoQuality":"720","youtubeVideoCodec":"h264","youtubeVideoContainer":"mp4","downloadMode":"auto","alwaysProxy":true,"filenameStyle":"basic"}")
+
+            echo "Cobalt response for $id:"
+            echo "$response"
+
+            status=$(echo "$response" | jq -r '.status // empty')
+            file_url=$(echo "$response" | jq -r '.url // empty')
+
+            if [ "$status" != "tunnel" ] && [ "$status" != "redirect" ]; then
+              echo "Cobalt could not produce a downloadable URL for $id."
+              exit 1
+            fi
+
+            if [ -z "$file_url" ] || [ "$file_url" = "null" ]; then
+              echo "Cobalt returned no file URL for $id."
+              exit 1
+            fi
+
+            curl -fL --retry 3 --retry-delay 2 "$file_url" -o "downloads/$id.mp4"
+          done
+
+      - name: Verify all three files
+        shell: bash
+        run: |
+          set -euo pipefail
+          for id in X51xe_x5d9I QSFPUmVXv8w QCM2H3T4ooA; do
+            test -s "downloads/$id.mp4" || {
+              echo "Missing or empty file: $id.mp4"
+              exit 1
+            }
+            ffprobe -v error -show_entries format=duration               -of default=noprint_wrappers=1:nokey=1 "downloads/$id.mp4"
+          done
 
       - name: Create ZIP
         shell: bash
         run: |
           set -euo pipefail
           cd downloads
-          zip -9 ../three-youtube-shorts.zip ./*
+          zip -9 ../three-youtube-shorts.zip ./*.mp4
 
       - name: Upload ZIP artifact
         uses: actions/upload-artifact@v4
