@@ -31,7 +31,10 @@ jobs:
           mkdir -p downloads
           yt-dlp \
             --no-playlist \
+            --retries 3 \
+            --fragment-retries 3 \
             --merge-output-format mp4 \
+            --extractor-args "youtube:player_client=web_embedded" \
             -o "downloads/%(id)s.%(ext)s" \
             "https://youtube.com/shorts/X51xe_x5d9I" \
             "https://youtube.com/shorts/QSFPUmVXv8w" \
