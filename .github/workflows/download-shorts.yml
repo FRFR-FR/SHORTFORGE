@@ -1,0 +1,53 @@
+name: Download Requested YouTube Shorts
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/download-shorts.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup yt-dlp and FFmpeg
+        uses: AnimMouse/setup-yt-dlp@v3
+        with:
+          ffmpeg: true
+          aria2: true
+
+      - name: Download the three Shorts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p downloads
+          yt-dlp \
+            --no-playlist \
+            --merge-output-format mp4 \
+            -o "downloads/%(id)s.%(ext)s" \
+            "https://youtube.com/shorts/X51xe_x5d9I" \
+            "https://youtube.com/shorts/QSFPUmVXv8w" \
+            "https://youtube.com/shorts/QCM2H3T4ooA"
+
+      - name: Create ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd downloads
+          zip -9 ../three-youtube-shorts.zip ./*
+
+      - name: Upload ZIP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: three-youtube-shorts
+          path: three-youtube-shorts.zip
+          if-no-files-found: error
+          retention-days: 7
