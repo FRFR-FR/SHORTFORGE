@@ -426,10 +426,6 @@ def make_camera():
         camera.rotation_euler = (Vector(target)-camera.location).to_track_quat("-Z","Y").to_euler()
         camera.keyframe_insert(data_path="location", frame=frame)
         camera.keyframe_insert(data_path="rotation_euler", frame=frame)
-    if camera.animation_data and camera.animation_data.action:
-        for fc in camera.animation_data.action.fcurves:
-            for kp in fc.keyframe_points:
-                kp.interpolation = "BEZIER"
     return camera
 
 # ---------- Original character: strokes only, no mesh or image cut-outs ----------
@@ -584,7 +580,7 @@ def create_grease_pencil():
         material.diffuse_color=color
         gp_data.materials.append(material)
     layer=gp_data.layers.new("Frame-by-frame drawn lines", set_active=True)
-    layer.use_lights=False
+    layer.use_lights=True
     layer.opacity=1.0
     layer.use_onion_skinning=True
     obj.show_in_front=False
@@ -632,6 +628,7 @@ def create_grease_pencil():
                 point.position=coord
                 point.radius=base*taper
                 point.opacity=0.96 if style==0 else (0.64 if style==1 else (0.95 if style==2 else 0.90))
+        drawing.tag_positions_changed()
         counts.append({"frame":frame_number,"strokes":len(sizes)})
     return obj,counts
 
