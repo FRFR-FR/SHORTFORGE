@@ -80,17 +80,18 @@ def main() -> None:
     for source in SOURCES:
         target = output / source["key"]
         target.mkdir(parents=True, exist_ok=True)
-        raw = target / "source-original.webm"
         clean = target / "reference-video-only.webm"
 
         # yt-dlp is deliberately used on the direct Commons file, not on YouTube.
         run([
             sys.executable, "-m", "yt_dlp", "--force-generic-extractor",
             "--no-warnings", "--no-playlist", "--no-progress",
-            "--output", str(raw), source["url"],
+            "--output", str(target / "source-original.%(ext)s"), source["url"],
         ])
-        if not raw.is_file() or raw.stat().st_size == 0:
-            raise SystemExit(f"yt-dlp did not produce the source file for {source['key']}.")
+        candidates = [item for item in target.glob("source-original.*") if item.is_file()]
+        if len(candidates) != 1 or candidates[0].stat().st_size == 0:
+            raise SystemExit(f"yt-dlp did not produce exactly one source file for {source['key']}.")
+        raw = candidates[0]
 
         actual_sha1 = sha1(raw)
         if actual_sha1.lower() != source["sha1"].lower():
