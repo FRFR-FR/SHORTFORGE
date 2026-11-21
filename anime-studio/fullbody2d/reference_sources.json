@@ -1,0 +1,26 @@
+[
+  {
+    "key": "morevna-demo",
+    "title": "The Beautiful Queen Marya Morevna: Demo [HD version]",
+    "creator": "Konstantin Dmitriev / Morevna Project",
+    "url": "https://www.youtube.com/watch?v=PThy9_RZQ8c",
+    "visual_license": "CC BY 3.0",
+    "audio_license": "CC BY-NC-SA 3.0; audio is never downloaded",
+    "visual_license_evidence": "Creator description says all visual footage is CC BY 3.0",
+    "required_description_text": "all visual footage of the demo are provided under the terms of creativecommons attribution 3.0",
+    "credit": "Animation by Morevna Project",
+    "license_url": "https://creativecommons.org/licenses/by/3.0/"
+  },
+  {
+    "key": "morevna-episode-3",
+    "title": "Morevna Episode 3.0.2 (English)",
+    "creator": "Morevna Project",
+    "url": "https://www.youtube.com/watch?v=ecVv2IB7f5k",
+    "visual_license": "CC BY-SA 4.0",
+    "audio_license": "Audio is never downloaded",
+    "visual_license_evidence": "Official video description declares CC BY-SA 4.0",
+    "required_description_text": "license: creative commons attribution-sharealike 4.0",
+    "credit": "Morevna Project",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  }
+]
