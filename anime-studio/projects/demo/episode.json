@@ -1,0 +1,38 @@
+{
+  "title": "Glass Rain — ANIMEFORGE Engine Demonstration",
+  "description": "An original courier races across a neon megacity while an energy blade ignites above the rain-soaked street.",
+  "duration_seconds": 10,
+  "fps": 30,
+  "width": 1280,
+  "height": 720,
+  "quality": "preview",
+  "episode_module": "episode.js",
+  "assets_complete": false,
+  "style": {
+    "visual_identity": "Original high-energy 2.5D cyberpunk action anime with graphic silhouettes, expressive posing and layered painted depth.",
+    "palette": ["#070b19", "#121b37", "#18e5ed", "#f400a8", "#ffb84a", "#f3e9f4"],
+    "lighting": "Hard magenta/cyan edge lights, warm practicals, deep ink shadows and restrained bloom.",
+    "linework": "Bold clean silhouette outlines, cel-shaded planes, fine facial details and controlled graphic highlights.",
+    "camera": "Wide cinematic 16:9 lens, foreground occlusion, motivated trucking, push-ins and depth parallax.",
+    "motion": "Anticipation, readable key poses, arcs, overlapping hair/clothing, impact holds and directional speed lines."
+  },
+  "characters": [
+    {
+      "id": "ari",
+      "name": "Ari Venn",
+      "design_notes": "Original young adult courier with short swept-back dark hair, a single teal hair streak, graphite flight jacket and amber visor. No recognizable franchise design."
+    },
+    {
+      "id": "wraith",
+      "name": "Wraith Drone",
+      "design_notes": "Original hovering security machine with a compact angular silhouette, one hot-pink optic and articulated stabilizer fins."
+    }
+  ],
+  "shots": [
+    {"start": 0, "duration": 2.5, "action": "Ari sprints through a rain-soaked neon avenue as traffic streaks behind.", "camera": "low tracking wide shot, foreground signs parallax past lens", "emotional_beat": "urgent determination"},
+    {"start": 2.5, "duration": 2.5, "action": "A Wraith drone drops into frame and scans the avenue with a sharp magenta beam.", "camera": "fast tilt-up into a compressed medium shot", "emotional_beat": "sudden threat"},
+    {"start": 5, "duration": 2.5, "action": "Ari plants a foot, twists the torso and ignites a cyan energy blade.", "camera": "three-quarter orbit with a tight impact push", "emotional_beat": "defiant resolve"},
+    {"start": 7.5, "duration": 2.5, "action": "Ari launches forward; rain and neon reflections burst outward in a freeze-frame finish.", "camera": "accelerating dolly, then a sharp held hero composition", "emotional_beat": "explosive release"}
+  ],
+  "audio": {"music": false, "narration": false, "dialogue": []}
+}

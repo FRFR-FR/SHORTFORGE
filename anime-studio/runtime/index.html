@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ANIMEFORGE Render Stage</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #050711; }
+    #stage { position: fixed; inset: 0; display: grid; place-items: center; background: #050711; }
+    canvas { display: block; width: 100%; height: 100%; }
+    #error { position: fixed; inset: 0; padding: 2rem; color: #fff; background: #180a18; font: 16px/1.5 ui-monospace, monospace; white-space: pre-wrap; display: none; }
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "/node_modules/three/build/three.module.js",
+        "three/addons/": "/node_modules/three/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <main id="stage"></main>
+  <pre id="error"></pre>
+  <script type="module" src="/runtime/main.js"></script>
+</body>
+</html>

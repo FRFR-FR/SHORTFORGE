@@ -136,3 +136,8 @@ docs/                   Architecture, schema, research and review guides
 ## Status
 
 This repository package is a new implementation. Its local validation suite can be run with `python3 -m unittest discover -s tests -v`. A GitHub Actions render can only be verified after this project is pushed to a GitHub repository and the workflow is run there.
+
+
+## ANIMEFORGE — horizontal 2.5D anime episodes
+
+The separate `anime-studio/` subsystem adds a Claude-powered coding agent for original horizontal 16:9 anime episodes using Three.js, HTML, deterministic Playwright frame capture, FFmpeg encoding and frame QA. It does not change the existing Blender-based vertical Shorts workflow. Read [ANIMEFORGE documentation](anime-studio/README.md) and its [production standard](anime-studio/docs/PRODUCTION_STANDARD.md). The manual workflow is **Actions → ANIMEFORGE episode**; add `ANTHROPIC_API_KEY` to repository Actions secrets before requesting Claude-generated episodes. Master renders require verified original character and environment art assets.
