@@ -809,6 +809,11 @@ def render(output_dir: Path) -> dict:
         "resolution": [WIDTH, HEIGHT],
         "audio": "none",
         "reference_video_frames_in_final_output": False,
+        "character_count": 2,
+        "characters": [
+            {"name": "foreground swordswoman", "design": "original adult anime-style full-body human, complete face, hair, costume, hands, legs and boots"},
+            {"name": "midground scout", "design": "second original adult anime-style full-body human with complete facial features, auburn hair, armored costume, hands, legs and boots"}
+        ],
         "character": {
             "design": "original adult anime-style human, complete full-body illustration",
             "rendering": "full colour, form gradients, cel-shadow planes, highlights, material details and ink contours",
