@@ -1,0 +1,39 @@
+{
+  "episode_id": "glasswing-debate-001",
+  "title": "Did Claude Mythos Save the Internet?",
+  "subtitle": "Inside Project Glasswing — a three-perspective debate",
+  "duration_seconds": 300, "fps": 30, "width": 1280, "height": 720,
+  "quality": "landscape-debate-master",
+  "visual_style": "cinematic-painterly-3d-investigative-debate",
+  "narration": "three-speaker-dialogue", "captions_burned_in": false, "music": false,
+  "assets": {"male_avatar":"avatar-library/hero-male.blend","female_avatar":"avatar-library/hero-female.blend","source":"Quaternius Universal Base Characters Standard","license":"CC0-1.0"},
+  "voices": {
+    "Liam":{"engine":"Kokoro-82M","voice":"am_liam","role":"Host and evidence examiner"},
+    "George":{"engine":"Kyutai Pocket TTS","voice_prompt":"hf://kyutai/tts-voices/vctk/p315_023_enhanced.wav","role":"Open-source software maintainer"},
+    "Eponine":{"engine":"Kyutai Pocket TTS","voice_prompt":"hf://kyutai/tts-voices/vctk/p262_023_enhanced.wav","role":"Critical-infrastructure security lead"}
+  },
+  "locations":[
+    {"id":"ops_center","name":"Network Operations Centre","palette":"midnight-blue / cool-cyan / amber"},
+    {"id":"maintainer_workshop","name":"Open-Source Maintainer Workshop","palette":"warm timber / olive / tungsten"},
+    {"id":"data_center","name":"Critical Infrastructure Data Centre","palette":"steel / blue / teal"},
+    {"id":"panel","name":"Glasswing Debate Stage","palette":"charcoal / ivory / cyan"},
+    {"id":"network_globe","name":"Global Software Dependency Visualisation","palette":"deep navy / electric cyan / amber"},
+    {"id":"vulnerability_lab","name":"Vulnerability Research Lab","palette":"graphite / plum / warning red"},
+    {"id":"patch_pipeline","name":"Patch and Deployment Floor","palette":"steel / teal / green"}
+  ],
+  "characters":{
+    "Liam":{"asset":"male","signature":"midnight-blue jacket, amber edge detail, compact analyst headset","acting":"measured, curious, evidence-led"},
+    "George":{"asset":"male","signature":"olive and earth accents, maintainer glasses, practical tablet","acting":"sceptical, precise, visibly frustrated by invisible maintenance work"},
+    "Eponine":{"asset":"female","signature":"plum and teal accents, infrastructure operator tablet","acting":"calm, assertive, operationally focused"},
+    "supporting_people":"Fully rigged and textured engineering, operations and maintenance staff placed in relevant backgrounds."
+  },
+  "camera_language":{
+    "wide":"environment and human-scale establishing shots",
+    "close":"expressive face, controlled push-in",
+    "side":"lateral profile and opposing viewpoint",
+    "over_shoulder":"operator's screen or panel exchange",
+    "macro":"dimensional conceptual insert, not a text slide"
+  },
+  "sound":{"dialogue":true,"room_tone":"subtle-only","sound_effects":"purposeful-subtle-only","background_music":false},
+  "delivery":["glasswing-debate.mp4","dialogue.wav","Liam.wav","George.wav","Eponine.wav","dialogue.srt","timings.json","contact-sheet.jpg","qa-report.json","render-manifest.json"]
+}
