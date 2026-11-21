@@ -97,24 +97,24 @@ jobs:
           node src/render.mjs --project "projects/$SAFE_SLUG/episode.json" --quality "$QUALITY" --output "out/$SAFE_SLUG.mp4"
 
       - name: Render the assistant-authored NEON VEIL 720p episode
-        if: \${{ inputs.concept == '' }}
+        if: ${{ inputs.concept == '' }}
         run: |
           mkdir -p out
           node src/render.mjs --project projects/demo/episode.json --quality preview --output out/neon-veil-preview.mp4
 
       - name: Publish NEON VEIL 720p preview as a prerelease
-        if: \${{ success() && github.event_name == 'pull_request' }}
+        if: ${{ success() && github.event_name == 'pull_request' }}
         env:
-          GH_TOKEN: \${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          TAG="animeforge-neon-veil-preview-\${GITHUB_RUN_NUMBER}"
+          TAG="animeforge-neon-veil-preview-${GITHUB_RUN_NUMBER}"
           gh release create "$TAG" \
             "out/neon-veil-preview.mp4" \
             "out/neon-veil-preview.qa.json" \
             "out/neon-veil-preview.contact-sheet.png" \
             --target "$GITHUB_SHA" \
-            --title "NEON VEIL — 720p review render #\${GITHUB_RUN_NUMBER}" \
+            --title "NEON VEIL — 720p review render #${GITHUB_RUN_NUMBER}" \
             --notes "Assistant-authored 2.5D anime sequence. 15 seconds, 1280x720, 30 fps. See QA report and contact sheet attached." \
             --prerelease
 
@@ -128,7 +128,7 @@ jobs:
             SAFE_SLUG="$(printf '%s' "$PROJECT_SLUG" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9-]+/-/g; s/^-+|-+$//g' | cut -c1-48)"
             [[ -n "$SAFE_SLUG" ]] || SAFE_SLUG="episode-$GITHUB_RUN_NUMBER"
           else
-            SAFE_SLUG="animeforge-smoke"
+            SAFE_SLUG="neon-veil-preview"
           fi
           gh release create "animeforge-$GITHUB_RUN_NUMBER" \
             "out/$SAFE_SLUG.mp4" \
