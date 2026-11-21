@@ -37,9 +37,10 @@ jobs:
         run: |
           set -euo pipefail
           base64 -d src/blender/render_debate.py.gz.b64 | gzip -dc > src/blender/render_debate.py
-          base64 -d skills/explainer3d-debate/references/source-materials.tgz.b64 | tar -xz -f -
+          base64 -d src/blender/render_debate.py.gz.b64 | gzip -t
           test -s skills/explainer3d-debate/references/ORIGINAL_SKILL.md
           test -s skills/explainer3d-debate/references/SOURCE_STYLE_BIBLE.md
+          test -s skills/explainer3d-debate/references/style-bible.md
       - name: Install system libraries
         run: |
           sudo apt-get update
