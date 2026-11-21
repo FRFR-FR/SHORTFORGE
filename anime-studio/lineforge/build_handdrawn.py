@@ -590,14 +590,14 @@ def create_grease_pencil():
     obj.show_in_front=False
 
     counts=[]
-    for frame in range(1,FRAME_COUNT+1):
-        t=(frame-1)/float(FPS)
+    for frame_number in range(1,FRAME_COUNT+1):
+        t=(frame_number-1)/float(FPS)
         pose=pose_at(t)
         frame_lines=[]
         for i,spec in enumerate(STROKES):
             part=spec["part"]
             samples=catmull(spec["pts"],3)
-            coords=[transform_point(part,p,spec | {"seed":i},pose,frame) for p in samples]
+            coords=[transform_point(part,p,spec | {"seed":i},pose,frame_number) for p in samples]
             frame_lines.append((coords,spec))
         # Additional moving FX and rain are also authored as individual lines.
         for i,spec in enumerate(dynamic_fx(t)+rain_strokes(t)):
@@ -612,8 +612,8 @@ def create_grease_pencil():
                     coords.append((p[0],-1.25+spec["depth"],p[1]))
                 frame_lines.append((coords,spec))
         sizes=[len(coords) for coords,spec in frame_lines if len(coords)>=2]
-        frame=layer.frames.new(frame)
-        drawing=frame.drawing
+        gp_frame=layer.frames.new(frame_number)
+        drawing=gp_frame.drawing
         drawing.add_strokes(sizes)
         stroke_index=0
         for coords,spec in frame_lines:
@@ -632,7 +632,7 @@ def create_grease_pencil():
                 point.position=coord
                 point.radius=base*taper
                 point.opacity=0.96 if style==0 else (0.64 if style==1 else (0.95 if style==2 else 0.90))
-        counts.append({"frame":frame,"strokes":len(sizes)})
+        counts.append({"frame":frame_number,"strokes":len(sizes)})
     return obj,counts
 
 # ---------- Render setup ----------
