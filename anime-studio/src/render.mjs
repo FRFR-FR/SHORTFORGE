@@ -63,7 +63,7 @@ function startStaticServer() {
         'Content-Type': mime(target),
         'Cache-Control': 'no-store',
         'X-Content-Type-Options': 'nosniff',
-        'Content-Security-Policy': "default-src 'self' data: blob:; script-src 'self' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; font-src 'self' data:"
+        'Content-Security-Policy': "default-src 'self' data: blob:; script-src 'self' 'unsafe-eval' 'unsafe-inline' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; font-src 'self' data:"
       });
       if (request.method === 'HEAD') { response.end(); return; }
       fs.createReadStream(target).pipe(response);
@@ -135,14 +135,28 @@ try {
     ]
   });
   const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
-  page.on('pageerror', (error) => pageErrors.push(error.message));
+  page.on('pageerror', (error) => pageErrors.push('pageerror: ' + error.message));
+  page.on('console', (message) => {
+    if (message.type() === 'error') pageErrors.push('console: ' + message.text());
+  });
+  page.on('requestfailed', (request) => pageErrors.push('request failed: ' + request.url() + ' — ' + (request.failure()?.errorText || 'unknown')));
   const url = host.url + '/runtime/index.html?episode=' + encodeURIComponent(relativeModule) +
     '&width=' + width + '&height=' + height + '&fps=' + fps;
   console.log('ANIMEFORGE browser stage: ' + width + 'x' + height + ' @ ' + fps + ' fps');
   await page.goto(url, { waitUntil: 'networkidle', timeout: 90000 });
-  await page.waitForFunction(() => window.__ANIME_READY__ === true || Boolean(window.__ANIME_ERROR__), null, { timeout: 90000 });
+  try {
+    await page.waitForFunction(() => window.__ANIME_READY__ === true || Boolean(window.__ANIME_ERROR__), null, { timeout: 45000 });
+  } catch (error) {
+    const state = await page.evaluate(() => ({
+      ready: window.__ANIME_READY__ === true,
+      error: window.__ANIME_ERROR__ || null,
+      title: document.title,
+      body: document.body?.innerText?.slice(0, 1400) || ''
+    })).catch(() => null);
+    throw new Error('Timed out initializing the Three.js episode. Browser state: ' + JSON.stringify(state) + '\\nBrowser diagnostics: ' + pageErrors.join(' | ') + '\\n' + error.message);
+  }
   const initError = await page.evaluate(() => window.__ANIME_ERROR__ || null);
-  if (initError) throw new Error('Three.js episode initialization failed:\n' + initError);
+  if (initError) throw new Error('Three.js episode initialization failed:\\n' + initError + '\\nBrowser diagnostics: ' + pageErrors.join(' | '));
   const canvas = page.locator('canvas');
   if (await canvas.count() !== 1) throw new Error('Expected exactly one render canvas.');
   console.log('Capturing ' + totalFrames + ' deterministic frames...');

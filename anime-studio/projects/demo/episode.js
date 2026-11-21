@@ -285,7 +285,7 @@ export async function createEpisode({ scene, camera, THREE: T, kit }) {
     { id: 'leg-r-upper-art', joint: 'right_leg', src: '/projects/demo/assets/characters/rin/leg-r-upper.svg', pivot: [0.25, 0, 0.82], size: [0.54, 0.92], offset: [0, 0, -0.37], order: 15 },
     { id: 'leg-r-shin-art', joint: 'right_shin', parentJoint: 'right_leg', src: '/projects/demo/assets/characters/rin/leg-r-shin.svg', pivot: [0, 0, -0.64], size: [0.51, 0.95], offset: [0, 0, -0.39], order: 16 },
     { id: 'scarf-art', joint: 'scarf', parentJoint: 'torso', src: '/projects/demo/assets/characters/rin/scarf.svg', pivot: [-0.08, 0.04, 0.32], size: [1.26, 0.98], offset: [-0.42, 0, 0.04], order: 28 }
-  ], { position: [-1.55, -0.25, 0.18], scale: 1.28 });
+  ], { position: [-1.55, -0.25, 0.88], scale: 1.28 });
 
   const joints = artRoot.joints;
   const drone = makeDrone(scene, [3.5, -0.05, 5.05], 1.02, '#ff40b3');
@@ -350,7 +350,7 @@ export async function createEpisode({ scene, camera, THREE: T, kit }) {
       const jumpArc = Math.sin(Math.PI * clamp((time - 9.8) / 2.4)) * 1.12 * leap;
 
       artRoot.root.position.x = x;
-      artRoot.root.position.z = 0.18 + jumpArc + resolve * 0.02;
+      artRoot.root.position.z = 0.88 + jumpArc + resolve * 0.02;
       artRoot.root.rotation.y = -0.06 - skid * 0.24 + leap * 0.34 - slashPower * 0.1;
       artRoot.root.rotation.z = -skid * 0.16 + leap * 0.12;
       artRoot.root.scale.setScalar(1.28 + leap * 0.035);
@@ -378,13 +378,13 @@ export async function createEpisode({ scene, camera, THREE: T, kit }) {
 
       const swordActive = draw > 0.02 || charge > 0.02 || leap > 0.02 || slashPower > 0.02;
       sword.root.visible = swordActive;
-      sword.root.position.set(x + 0.58 + leap * 0.14, -0.92, 1.88 + jumpArc + charge * 0.15);
+      sword.root.position.set(x + 0.58 + leap * 0.14, -0.92, 2.55 + jumpArc + charge * 0.15);
       sword.root.rotation.y = -0.12 + draw * 0.38 + charge * 0.18 - slashPower * 1.15;
       sword.root.rotation.z = -0.55 - charge * 0.45 + slashPower * 1.45;
       sword.aura.intensity = 0.7 + charge * 13 + slashPower * 9;
       sword.root.scale.setScalar(1 + charge * 0.08);
 
-      slash.update(time, slashPower, [x + 0.8, -0.74, 2.15 + jumpArc]);
+      slash.update(time, slashPower, [x + 0.8, -0.74, 2.55 + jumpArc]);
       heroLight.intensity = 2 + charge * 12 + slashPower * 10;
       floorGlow.position.x = x;
       floorGlow.material.opacity = 0.08 + charge * 0.32 + slashPower * 0.22;
