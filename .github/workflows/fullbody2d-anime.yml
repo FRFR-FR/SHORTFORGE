@@ -29,6 +29,7 @@ jobs:
 
       - name: Install 2D rendering dependencies and yt-dlp
         run: |
+          set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends ffmpeg python3-venv libcairo2
           python3 -m venv "$RUNNER_TEMP/fullbody-venv"
@@ -43,17 +44,17 @@ jobs:
           mkdir -p "$RUNNER_TEMP/visual-reference"
           "$RUNNER_TEMP/fullbody-venv/bin/python" anime-studio/fullbody2d/download_references.py \
             --output-dir "$RUNNER_TEMP/visual-reference"
-          # Temporary sample frames support visual review only. No reference frames
-          # or source video files are packaged into the finished episode.
+          # The downloads and contact sheets are temporary research material.
+          # They are never added to the repository or finished episode.
           for source in morevna-demo morevna-episode-3; do
-            VIDEO="$(find "$RUNNER_TEMP/visual-reference/$source" -maxdepth 1 -type f | grep -E '\.(mp4|mkv|webm|mov)
+            VIDEO="$(find "$RUNNER_TEMP/visual-reference/$source" -maxdepth 1 -type f \( -name '*.mp4' -o -name '*.mkv' -o -name '*.webm' -o -name '*.mov' \) -print -quit)"
             test -n "$VIDEO"
             ffmpeg -hide_banner -loglevel error -y -i "$VIDEO" \
               -vf "fps=1/8,scale=420:-1,tile=2x2" -frames:v 1 \
               "$RUNNER_TEMP/visual-reference/$source-contact-sheet.png"
           done
 
-      - name: Render fully coloured 2D human character and designed props
+      - name: Render two fully coloured 2D human characters and designed props
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/fullbody2d-output"
@@ -78,6 +79,7 @@ jobs:
 
       - name: Contact sheet and full-body 2D QA
         run: |
+          set -euo pipefail
           ffmpeg -hide_banner -y \
             -i "$RUNNER_TEMP/fullbody2d-output/fullbody2d-review-720p.mp4" \
             -vf "fps=1,scale=480:-1,tile=3x2" -frames:v 1 \
@@ -90,10 +92,10 @@ jobs:
 
       - name: Publish the original 2D review sample
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: \${{ github.token }}
         run: |
           set -euo pipefail
-          TAG="fullbody2d-review-720p-${GITHUB_RUN_NUMBER}"
+          TAG="fullbody2d-review-720p-\${GITHUB_RUN_NUMBER}"
           gh release create "$TAG" \
             "$RUNNER_TEMP/fullbody2d-output/fullbody2d-review-720p.mp4" \
             "$RUNNER_TEMP/fullbody2d-output/fullbody2d-scene.svg" \
@@ -101,64 +103,6 @@ jobs:
             "$RUNNER_TEMP/fullbody2d-output/fullbody2d-manifest.json" \
             "$RUNNER_TEMP/fullbody2d-output/fullbody2d-qa.json" \
             --target "$GITHUB_SHA" \
-            --title "FULLBODY2D — rendered 2D character test #${GITHUB_RUN_NUMBER}" \
-            --notes "Original 2D cel-shaded full-body character and designed prop on a 2D stage. 6 seconds, 1280x720, 30fps, no audio. Licensed Morevna visual references were downloaded video-only to temporary CI storage for study and are not included in this release. See the repository's FULLBODY2D guide for source attribution." \
-            --prerelease
- | head -n 1)"
-            test -n "$VIDEO"
-            ffmpeg -hide_banner -loglevel error -y -i "$VIDEO" \
-              -vf "fps=1/8,scale=420:-1,tile=2x2" -frames:v 1 \
-              "$RUNNER_TEMP/visual-reference/$source-contact-sheet.png"
-          done
-
-      - name: Render fully coloured 2D human character and designed props
-        run: |
-          set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/fullbody2d-output"
-          "$RUNNER_TEMP/fullbody-venv/bin/python" anime-studio/fullbody2d/render.py \
-            --output-dir "$RUNNER_TEMP/fullbody2d-output"
-          test -s "$RUNNER_TEMP/fullbody2d-output/fullbody2d-scene.svg"
-          test -s "$RUNNER_TEMP/fullbody2d-output/fullbody2d-manifest.json"
-
-      - name: Encode 720p H.264 review master
-        run: |
-          set -euo pipefail
-          ffmpeg -hide_banner -y \
-            -framerate "$FPS" -start_number 1 \
-            -i "$RUNNER_TEMP/fullbody2d-output/frames/frame_%04d.png" \
-            -c:v libx264 -preset slow -crf 17 -pix_fmt yuv420p -r "$FPS" \
-            -color_primaries bt709 -color_trc bt709 -colorspace bt709 \
-            -movflags +faststart -an \
-            "$RUNNER_TEMP/fullbody2d-output/fullbody2d-review-720p.mp4"
-          ffprobe -v error -show_entries stream=codec_name,width,height,avg_frame_rate,nb_read_frames \
-            -show_entries format=duration,size -of json \
-            "$RUNNER_TEMP/fullbody2d-output/fullbody2d-review-720p.mp4"
-
-      - name: Contact sheet and full-body 2D QA
-        run: |
-          ffmpeg -hide_banner -y \
-            -i "$RUNNER_TEMP/fullbody2d-output/fullbody2d-review-720p.mp4" \
-            -vf "fps=1,scale=480:-1,tile=3x2" -frames:v 1 \
-            "$RUNNER_TEMP/fullbody2d-output/fullbody2d-contact-sheet.png"
-          "$RUNNER_TEMP/fullbody-venv/bin/python" anime-studio/fullbody2d/qa.py \
-            --video "$RUNNER_TEMP/fullbody2d-output/fullbody2d-review-720p.mp4" \
-            --frames-dir "$RUNNER_TEMP/fullbody2d-output/frames" \
-            --manifest "$RUNNER_TEMP/fullbody2d-output/fullbody2d-manifest.json" \
-            --report "$RUNNER_TEMP/fullbody2d-output/fullbody2d-qa.json"
-
-      - name: Publish the original 2D review sample
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          TAG="fullbody2d-review-720p-${GITHUB_RUN_NUMBER}"
-          gh release create "$TAG" \
-            "$RUNNER_TEMP/fullbody2d-output/fullbody2d-review-720p.mp4" \
-            "$RUNNER_TEMP/fullbody2d-output/fullbody2d-scene.svg" \
-            "$RUNNER_TEMP/fullbody2d-output/fullbody2d-contact-sheet.png" \
-            "$RUNNER_TEMP/fullbody2d-output/fullbody2d-manifest.json" \
-            "$RUNNER_TEMP/fullbody2d-output/fullbody2d-qa.json" \
-            --target "$GITHUB_SHA" \
-            --title "FULLBODY2D — rendered 2D character test #${GITHUB_RUN_NUMBER}" \
-            --notes "Original 2D cel-shaded full-body character and designed prop on a 2D stage. 6 seconds, 1280x720, 30fps, no audio. Licensed Morevna visual references were downloaded video-only to temporary CI storage for study and are not included in this release. See the repository's FULLBODY2D guide for source attribution." \
+            --title "FULLBODY2D — rendered 2D character test #\${GITHUB_RUN_NUMBER}" \
+            --notes "Original full-colour 2D characters and designed props on a 2D stage. 6 seconds, 1280x720, 30fps, no audio. Licensed Morevna visual references were downloaded video-only to temporary CI storage and are not included in the episode. Attribution is documented in the repository guide." \
             --prerelease
