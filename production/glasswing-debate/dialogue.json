@@ -1,0 +1,335 @@
+{
+  "title": "DID CLAUDE MYTHOS SAVE THE INTERNET?",
+  "subtitle": "Inside Project Glasswing — a three-perspective debate",
+  "duration_seconds": 300,
+  "fps": 30,
+  "resolution": [
+    1280,
+    720
+  ],
+  "episode_id": "glasswing-debate-001",
+  "voices": {
+    "Liam": {
+      "engine": "kokoro",
+      "voice": "am_liam"
+    },
+    "George": {
+      "engine": "pocket-tts",
+      "voice_prompt": "hf://kyutai/tts-voices/vctk/p315_023_enhanced.wav"
+    },
+    "Eponine": {
+      "engine": "pocket-tts",
+      "voice_prompt": "hf://kyutai/tts-voices/vctk/p262_023_enhanced.wav"
+    }
+  },
+  "lines": [
+    {
+      "speaker": "Liam",
+      "scene": "ops_center",
+      "focus": "liam_ops",
+      "camera": "wide",
+      "emotion": "concerned",
+      "gesture": "point",
+      "pause_after": 0.7,
+      "text": "Imagine a city where hospitals, banks and power stations depend on hidden machinery. Now an AI can uncover cracks in that machinery. Did Claude Mythos save the internet, or expose how fragile it was?",
+      "keyword": "EARLY WARNING",
+      "keyword_type": "problem"
+    },
+    {
+      "speaker": "George",
+      "scene": "maintainer_workshop",
+      "focus": "george_workshop",
+      "camera": "close",
+      "emotion": "angry",
+      "gesture": "thinking",
+      "pause_after": 0.6,
+      "text": "I reject the word saved. Finding a fault is not fixing it. I maintain open-source software. Reproducing a bug, writing a safe patch and supporting old versions can take weeks."
+    },
+    {
+      "speaker": "Eponine",
+      "scene": "data_center",
+      "focus": "eponine_dc",
+      "camera": "wide",
+      "emotion": "determined",
+      "gesture": "confident",
+      "pause_after": 0.6,
+      "text": "Discovery still changes the equation. Defenders face millions of lines of code and limited staff. Mythos can connect clues, reproduce obscure failures and give engineers a sharper starting point."
+    },
+    {
+      "speaker": "Liam",
+      "scene": "ops_center",
+      "focus": "liam_ops",
+      "camera": "close",
+      "emotion": "thinking",
+      "gesture": "point",
+      "pause_after": 0.5,
+      "text": "That is Project Glasswing. Anthropic announced it on April seventh, twenty twenty-six, giving selected defenders access to Claude Mythos Preview to examine important software before attackers could exploit the same weaknesses.",
+      "keyword": "PROJECT GLASSWING",
+      "keyword_type": "term"
+    },
+    {
+      "speaker": "Eponine",
+      "scene": "panel",
+      "focus": "eponine_panel",
+      "camera": "over_shoulder",
+      "emotion": "happy",
+      "gesture": "confident",
+      "pause_after": 0.5,
+      "text": "The first partners included major cloud, chip, software and security companies, the Linux Foundation and financial institutions. The goal was to protect shared digital foundations, not just one company’s network."
+    },
+    {
+      "speaker": "George",
+      "scene": "maintainer_workshop",
+      "focus": "george_workshop",
+      "camera": "side",
+      "emotion": "skeptical",
+      "gesture": "point",
+      "pause_after": 0.6,
+      "text": "But access was restricted. The internet also runs on tiny projects maintained by volunteers. A restricted model does not automatically give those maintainers time, funding or engineers to ship fixes.",
+      "keyword": "PATCH BOTTLENECK",
+      "keyword_type": "problem"
+    },
+    {
+      "speaker": "Liam",
+      "scene": "network_globe",
+      "focus": "none",
+      "camera": "macro",
+      "emotion": "concerned",
+      "gesture": "neutral",
+      "pause_after": 0.5,
+      "text": "So what did it uncover? Anthropic described serious, previously unknown weaknesses in widely used software, not simply toy examples made for a demonstration."
+    },
+    {
+      "speaker": "Eponine",
+      "scene": "vulnerability_lab",
+      "focus": "eponine_lab",
+      "camera": "close",
+      "emotion": "surprised",
+      "gesture": "point",
+      "pause_after": 0.6,
+      "text": "One example was a twenty-seven-year-old OpenBSD flaw that could let a remote connection crash the system. It survived decades inside software respected for security.",
+      "keyword": "27-YEAR FLAW",
+      "keyword_type": "problem"
+    },
+    {
+      "speaker": "George",
+      "scene": "maintainer_workshop",
+      "focus": "george_workshop",
+      "camera": "close",
+      "emotion": "angry",
+      "gesture": "point",
+      "pause_after": 0.6,
+      "text": "FFmpeg revealed another blind spot. A sixteen-year-old vulnerability escaped automated tests, even though the relevant code had been exercised around five million times.",
+      "keyword": "5 MILLION TEST HITS",
+      "keyword_type": "problem"
+    },
+    {
+      "speaker": "Liam",
+      "scene": "vulnerability_lab",
+      "focus": "liam_lab",
+      "camera": "wide",
+      "emotion": "concerned",
+      "gesture": "thinking",
+      "pause_after": 0.5,
+      "text": "Anthropic also reported a Linux kernel chain: several weaknesses combined to move from an ordinary user account to control of the machine.",
+      "keyword": "EXPLOIT CHAIN",
+      "keyword_type": "term"
+    },
+    {
+      "speaker": "Eponine",
+      "scene": "vulnerability_lab",
+      "focus": "eponine_lab",
+      "camera": "macro",
+      "emotion": "determined",
+      "gesture": "point",
+      "pause_after": 0.7,
+      "text": "Picture three locked doors. One has a loose hinge, another has a service key nearby, and the third guards the control room. Together they form an unexpected route."
+    },
+    {
+      "speaker": "George",
+      "scene": "maintainer_workshop",
+      "focus": "george_workshop",
+      "camera": "side",
+      "emotion": "thinking",
+      "gesture": "point",
+      "pause_after": 0.5,
+      "text": "That is why a suggested patch cannot be accepted blindly. It may close one route while breaking compatibility or another feature. People must reproduce, test and maintain the repair."
+    },
+    {
+      "speaker": "Liam",
+      "scene": "ops_center",
+      "focus": "liam_ops",
+      "camera": "wide",
+      "emotion": "surprised",
+      "gesture": "point",
+      "pause_after": 0.6,
+      "text": "In its first public update, Anthropic said around fifty partners had found more than ten thousand high- or critical-severity vulnerabilities with Mythos. That is the programme’s reported figure, not an independent audit.",
+      "keyword": "10,000+ REPORTED",
+      "keyword_type": "term"
+    },
+    {
+      "speaker": "Eponine",
+      "scene": "data_center",
+      "focus": "eponine_dc",
+      "camera": "close",
+      "emotion": "happy",
+      "gesture": "confident",
+      "pause_after": 0.5,
+      "text": "The value is not the headline number. Teams can map failures, understand how systems connect and prioritise issues that could affect many users."
+    },
+    {
+      "speaker": "George",
+      "scene": "maintainer_workshop",
+      "focus": "george_workshop",
+      "camera": "close",
+      "emotion": "skeptical",
+      "gesture": "thinking",
+      "pause_after": 0.6,
+      "text": "But every lead creates work. Is it real? Can it be reproduced? Who owns the code? Who reviews the patch? Who ships it and updates the old versions still running?",
+      "keyword": "WHO FIXES IT?",
+      "keyword_type": "problem"
+    },
+    {
+      "speaker": "Liam",
+      "scene": "panel",
+      "focus": "liam_panel",
+      "camera": "wide",
+      "emotion": "thinking",
+      "gesture": "point",
+      "pause_after": 0.5,
+      "text": "The bottleneck may be shifting: less time finding flaws, more time verifying, coordinating and fixing them. AI cannot make a fragmented software ecosystem organised."
+    },
+    {
+      "speaker": "Eponine",
+      "scene": "data_center",
+      "focus": "eponine_dc",
+      "camera": "side",
+      "emotion": "determined",
+      "gesture": "confident",
+      "pause_after": 0.5,
+      "text": "For critical infrastructure, earlier warning matters. A utility can validate a flaw, prepare a safe update and coordinate deployment before an attacker causes an outage.",
+      "keyword": "CRITICAL INFRASTRUCTURE",
+      "keyword_type": "term"
+    },
+    {
+      "speaker": "George",
+      "scene": "maintainer_workshop",
+      "focus": "george_workshop",
+      "camera": "close",
+      "emotion": "angry",
+      "gesture": "point",
+      "pause_after": 0.6,
+      "text": "The same capability can help an attacker. Finding complex bugs is dual-use. Restricted access may buy defenders time, but it cannot guarantee the advantage stays theirs.",
+      "keyword": "DUAL USE",
+      "keyword_type": "problem"
+    },
+    {
+      "speaker": "Liam",
+      "scene": "network_globe",
+      "focus": "none",
+      "camera": "wide",
+      "emotion": "concerned",
+      "gesture": "neutral",
+      "pause_after": 0.5,
+      "text": "Glasswing therefore has two stories: a defensive race to repair weaknesses, and a security challenge about who can access powerful models. Neither disappears after disclosure."
+    },
+    {
+      "speaker": "Eponine",
+      "scene": "panel",
+      "focus": "eponine_panel",
+      "camera": "over_shoulder",
+      "emotion": "determined",
+      "gesture": "point",
+      "pause_after": 0.5,
+      "text": "Anthropic later said it was expanding access to around one hundred and fifty additional organisations in power, water, healthcare, communications and hardware."
+    },
+    {
+      "speaker": "George",
+      "scene": "maintainer_workshop",
+      "focus": "george_workshop",
+      "camera": "side",
+      "emotion": "skeptical",
+      "gesture": "thinking",
+      "pause_after": 0.6,
+      "text": "Expansion is useful, but access is not resilience. A hospital may run equipment that cannot be updated quickly. A small library may lack people to support every version.",
+      "keyword": "ACCESS ≠ RESILIENCE",
+      "keyword_type": "problem"
+    },
+    {
+      "speaker": "Liam",
+      "scene": "patch_pipeline",
+      "focus": "liam_lab",
+      "camera": "wide",
+      "emotion": "thinking",
+      "gesture": "point",
+      "pause_after": 0.5,
+      "text": "Real defence is a pipeline: discover, reproduce, rank, notify, patch, test, release and confirm the update reaches the machines that need it.",
+      "keyword": "PATCH PIPELINE",
+      "keyword_type": "term"
+    },
+    {
+      "speaker": "Eponine",
+      "scene": "patch_pipeline",
+      "focus": "eponine_dc",
+      "camera": "close",
+      "emotion": "happy",
+      "gesture": "confident",
+      "pause_after": 0.6,
+      "text": "Mythos can explain unfamiliar code, trace a failure, suggest a repair and help write regression tests. Engineers still decide what is safe, with better evidence."
+    },
+    {
+      "speaker": "George",
+      "scene": "panel",
+      "focus": "george_panel",
+      "camera": "close",
+      "emotion": "angry",
+      "gesture": "point",
+      "pause_after": 0.6,
+      "text": "Measure outcomes, not spectacle: vulnerabilities fixed, updates deployed, maintainers supported and users protected. Reports mean little if vulnerable systems stay unchanged."
+    },
+    {
+      "speaker": "Liam",
+      "scene": "panel",
+      "focus": "liam_panel",
+      "camera": "wide",
+      "emotion": "thinking",
+      "gesture": "neutral",
+      "pause_after": 0.5,
+      "text": "So did Mythos save the internet? That goes too far. Glasswing did not repair every system or eliminate attackers. It helped defenders see hidden weaknesses.",
+      "keyword": "MEASURE THE FIX",
+      "keyword_type": "term"
+    },
+    {
+      "speaker": "Eponine",
+      "scene": "data_center",
+      "focus": "eponine_dc",
+      "camera": "close",
+      "emotion": "determined",
+      "gesture": "confident",
+      "pause_after": 0.6,
+      "text": "That is still a major shift. The internet is countless services, libraries and devices. Finding dangerous failures earlier can protect people who never know AI helped."
+    },
+    {
+      "speaker": "George",
+      "scene": "maintainer_workshop",
+      "focus": "george_workshop",
+      "camera": "close",
+      "emotion": "skeptical",
+      "gesture": "thinking",
+      "pause_after": 0.7,
+      "text": "I will call it lasting progress when maintainers have the resources to finish the job. Discovery is the opening move; long-term security is what follows."
+    },
+    {
+      "speaker": "Liam",
+      "scene": "network_globe",
+      "focus": "none",
+      "camera": "wide",
+      "emotion": "happy",
+      "gesture": "neutral",
+      "pause_after": 1.5,
+      "text": "Perhaps Mythos did not save the internet. It changed what defenders can see. Whether that becomes lasting protection depends on what people do next.",
+      "keyword": "THE VERDICT",
+      "keyword_type": "term"
+    }
+  ]
+}
