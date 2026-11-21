@@ -86,6 +86,9 @@ def main() -> None:
         run([
             sys.executable, "-m", "yt_dlp", "--force-generic-extractor",
             "--no-warnings", "--no-playlist", "--no-progress",
+            "--retries", "3", "--retry-sleep", "http:5", "--sleep-requests", "1",
+            "--add-header", "User-Agent: FULLBODY2D-reference-downloader/1.0 (https://github.com/FRFR-FR/SHORTFORGE)",
+            "--add-header", "Referer: https://commons.wikimedia.org/",
             "--output", str(target / "source-original.%(ext)s"), source["url"],
         ])
         candidates = [item for item in target.glob("source-original.*") if item.is_file()]
