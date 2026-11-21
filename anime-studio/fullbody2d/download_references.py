@@ -37,7 +37,12 @@ SOURCES = [
 
 
 def run(command: list[str]) -> str:
-    completed = subprocess.run(command, check=True, text=True, capture_output=True)
+    try:
+        completed = subprocess.run(command, check=True, text=True, capture_output=True)
+    except subprocess.CalledProcessError as error:
+        if error.stderr:
+            print(error.stderr, file=sys.stderr)
+        raise
     return completed.stdout.strip()
 
 
