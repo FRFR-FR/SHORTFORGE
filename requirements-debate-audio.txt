@@ -1,0 +1,5 @@
+# CPU-first synthesis. Kyutai Pocket TTS supplies George and Eponine; Kokoro supplies Liam.
+kokoro
+pocket-tts
+soundfile>=0.12.1
+numpy>=1.26
