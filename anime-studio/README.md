@@ -1,29 +1,34 @@
 # Anime Studio — FULLBODY2D
 
-The previous LINEFORGE experiment used stroke-only Grease Pencil characters in a 3D environment. That did not match the intended art direction and is retired.
+The previous LINEFORGE experiment used stroke-only characters in a 3D environment. That did not match the requested art direction and is retired.
 
-The active pipeline is **FULLBODY2D**: a fully 2D production stage containing complete, fully rendered people and props. Character volume comes from deliberate 2D draftsmanship — anatomy, construction, perspective, foreshortening, form shadows, cel shading, reflected light, material highlights, detailed clothing and layered hair. It must not look like stick figures, unshaded line drawings, flat icons or crude hinged cut-outs.
+The active pipeline is **FULLBODY2D**: a fully 2D production stage containing complete, fully rendered people and designed props. Their three-dimensional appearance must come from the artwork itself: anatomy, form construction, foreshortening, layered shapes, perspective, cel shadows, reflected light, material highlights, clothing construction, hair design and detailed cleanup.
 
-See the complete current guide:
+## Current files
 
 - [FULLBODY2D production guide](fullbody2d/README.md)
 - [Full-body character and prop renderer](fullbody2d/render.py)
-- [Licensed anime reference downloader using yt-dlp](fullbody2d/download_references.py)
+- [yt-dlp licensed anime reference downloader](fullbody2d/download_references.py)
+- [Reference palette and contrast analysis](fullbody2d/analyze_reference.py)
 - [Reference source and licence register](fullbody2d/reference_sources.json)
 - [Frame, motion and delivery QA](fullbody2d/qa.py)
 - [GitHub Actions workflow](../.github/workflows/fullbody2d-anime.yml)
 
-## Visual reference and rights
+## Downloaded anime references
 
-The first source is the Morevna Project, an independent open-source anime project. Its official site states that the Demo's visual parts and source files (excluding music) are CC BY 3.0; Morevna Episode 3 is CC BY-SA 4.0 and its animation sources are offered under the same licence. The workflow asks yt-dlp for video-only formats, checks the creator-published licence notice and stores references temporarily for study. Soundtracks are not downloaded. Reference footage is never inserted into the original episode or packaged in its release.
+The pipeline uses yt-dlp to download direct, openly licensed files from Wikimedia Commons. Its primary reference is **Morevna Episode 3.0.2**, a futuristic anime episode by Morevna Project. A second reference, **Pepper & Carrot Motion Comic — Episode 6**, is used for 2D illustrated character and prop design.
 
-Sources:
-- Morevna Demo: https://morevnaproject.org/anime/demo/
-- Morevna Episode 3: https://morevnaproject.org/anime/episode-3/
-- Morevna source library: https://morevnaproject.org/library/sources/
-- Creative Commons BY 3.0: https://creativecommons.org/licenses/by/3.0/
-- Creative Commons BY-SA 4.0: https://creativecommons.org/licenses/by-sa/4.0/
+The job checks the source-file SHA-1 hashes, strips muxed soundtrack audio into video-only files, deletes the original temporary downloads, and samples contact sheets. A numeric palette/contrast guide feeds the original scene renderer. No source video, artwork, frame or soundtrack appears in the final video.
 
-## Production status and quality bar
+The licences and attribution are recorded in [the FULLBODY2D guide](fullbody2d/README.md) and [reference register](fullbody2d/reference_sources.json). Morevna Episode 3's creator description says CC BY-SA 4.0 while its current Commons file page lists CC BY 4.0; the project conservatively follows the creator-stated CC BY-SA 4.0 terms. Pepper & Carrot Episode 6 is CC BY-SA 4.0, with a Commons VRT permission record.
 
-The six-second CI output is only a first procedural prototype proving the rendering pipeline and the full-body 2D design direction. It is not described as studio-quality anime. A production-ready episode needs expanded character turnarounds, several facial expressions, hand and footwear studies, costume and prop sheets, key poses, breakdowns, in-betweens, clean-up, compositing and a frame-by-frame human review.
+## Quality status
+
+The current six-second CI test is a procedural prototype to validate 2D composition, two complete character designs, material shading, props, frame motion and the reference palette workflow. It is not a claim of studio-quality anime. Long-form production requires detailed turnarounds, expression sheets, hand studies, pose design, breakdowns, in-betweens, cleanup and visual supervision.
+
+## References
+
+- https://commons.wikimedia.org/wiki/File:Morevna_Episode_3.0.2_(English).webm
+- https://commons.wikimedia.org/wiki/File:Morevna_Project_-_Pepper%26Carrot_(animated_comic)_-_Episode_6_-_The_Potion_Contest.webm
+- https://morevnaproject.org/anime/episode-3/
+- https://morevnaproject.org/pepper-and-carrot/episode-6/
