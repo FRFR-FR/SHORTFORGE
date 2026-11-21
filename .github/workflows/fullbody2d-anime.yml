@@ -27,11 +27,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Deno JavaScript runtime for YouTube extraction
-        uses: denoland/setup-deno@v2
-        with:
-          deno-version: v2.6.1
-
       - name: Install 2D rendering dependencies and yt-dlp with EJS support
         run: |
           set -euo pipefail
@@ -39,9 +34,8 @@ jobs:
           sudo apt-get install -y --no-install-recommends ffmpeg python3-venv libcairo2
           python3 -m venv "$RUNNER_TEMP/fullbody-venv"
           "$RUNNER_TEMP/fullbody-venv/bin/python" -m pip install --upgrade pip
-          "$RUNNER_TEMP/fullbody-venv/bin/python" -m pip install cairosvg pillow yt-dlp
+          "$RUNNER_TEMP/fullbody-venv/bin/python" -m pip install cairosvg pillow 'yt-dlp[default]'
           ffmpeg -version | head -n 1
-          deno --version
           "$RUNNER_TEMP/fullbody-venv/bin/python" -m yt_dlp --version
 
       - name: Download creator-licensed Morevna visual references with yt-dlp
@@ -56,7 +50,7 @@ jobs:
             VIDEO="$(find "$RUNNER_TEMP/visual-reference/$source" -maxdepth 1 -type f \( -name '*.mp4' -o -name '*.mkv' -o -name '*.webm' -o -name '*.mov' \) -print -quit)"
             test -n "$VIDEO"
             ffmpeg -hide_banner -loglevel error -y -i "$VIDEO" \
-              -vf "fps=1/8,scale=420:-1,tile=2x2" -frames:v 1 \
+              -vf "fps=1/30,scale=420:-1,tile=5x4" -frames:v 1 \
               "$RUNNER_TEMP/visual-reference/$source-contact-sheet.png"
           done
           "$RUNNER_TEMP/fullbody-venv/bin/python" anime-studio/fullbody2d/analyze_reference.py \
@@ -108,10 +102,10 @@ jobs:
 
       - name: Publish the original 2D review sample
         env:
-          GH_TOKEN: \${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          TAG="fullbody2d-review-720p-\${GITHUB_RUN_NUMBER}"
+          TAG="fullbody2d-review-720p-${GITHUB_RUN_NUMBER}"
           gh release create "$TAG" \
             "$RUNNER_TEMP/fullbody2d-output/fullbody2d-review-720p.mp4" \
             "$RUNNER_TEMP/fullbody2d-output/fullbody2d-scene.svg" \
@@ -121,6 +115,6 @@ jobs:
             "$RUNNER_TEMP/fullbody2d-output/reference-style-guide.json" \
             "$RUNNER_TEMP/fullbody2d-output/reference-attribution.json" \
             --target "$GITHUB_SHA" \
-            --title "FULLBODY2D — rendered 2D character test #\${GITHUB_RUN_NUMBER}" \
+            --title "FULLBODY2D — rendered 2D character test #${GITHUB_RUN_NUMBER}" \
             --notes "Original full-colour 2D characters and designed props on a 2D stage. 6 seconds, 1280x720, 30fps, no audio. Creator-licensed Morevna references were downloaded by yt-dlp to temporary CI storage; muxed audio was stripped, original files deleted, and only an abstract palette/contrast guide was used. No reference frames, character art, sound or source footage is included in the episode. See attribution and licence records." \
             --prerelease
