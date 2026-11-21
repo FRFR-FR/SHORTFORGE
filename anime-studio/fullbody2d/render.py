@@ -533,6 +533,221 @@ def character(t: float) -> str:
     """
 
 
+def secondary_character(t: float) -> str:
+    """A second complete, independently designed human character in mid-ground."""
+    bob = 2.6 * math.sin(t * math.tau * 0.52 + 1.1)
+    step = 5.0 * math.sin(t * math.tau * 0.52 + 0.4)
+    pony = 8.0 * math.sin(t * 2.3)
+    return f"""
+    <g transform="translate(852 {fmt(244+bob)}) scale(.66)" filter="url(#shadow)">
+      <ellipse cx="143" cy="646" rx="102" ry="13" fill="#020713" opacity=".78"/>
+      <!-- Back leg: articulated trousers, knee panel and boot -->
+      <g transform="rotate({fmt(step)} 127 390)">
+        <path d="M106 351 Q75 365 80 415 L91 486 L87 558
+                 Q102 574 126 565 L144 495 Q152 459 144 420
+                 L151 375Z" fill="url(#trousers)" stroke="#040a17" stroke-width="8"/>
+        <path d="M90 414 Q112 430 144 416 L137 449 Q112 461 91 446Z"
+              fill="#101a30" stroke="#637e96" stroke-width="3"/>
+        <path d="M94 475 Q115 490 142 478 L132 518 Q110 530 94 513Z"
+              fill="#080f20"/>
+        <path d="M94 548 Q116 561 137 549 L141 594
+                 Q115 614 80 598 L76 577Z"
+              fill="url(#leather)" stroke="#030814" stroke-width="7"/>
+        <path d="M82 577 Q111 592 141 576 M80 594 Q111 607 145 590"
+              fill="none" stroke="#8db8c5" stroke-width="4"/>
+        <path d="M79 603 Q111 617 145 597 L158 620
+                 Q119 644 69 626Z" fill="#050b18" stroke="#030814" stroke-width="5"/>
+      </g>
+      <!-- Front leg and boot -->
+      <g transform="rotate({fmt(-step)} 167 390)">
+        <path d="M147 352 Q179 346 195 382 L194 450
+                 L184 516 Q181 551 197 578
+                 Q173 596 139 585 L126 541 Q124 499 132 460
+                 Q134 400 132 374Z"
+              fill="url(#trousers)" stroke="#040a17" stroke-width="8"/>
+        <path d="M137 389 Q165 407 193 390 L190 424 Q164 441 136 422Z"
+              fill="#141f35" stroke="#6b849b" stroke-width="3"/>
+        <path d="M132 468 Q161 484 188 466 L180 500 Q153 516 130 493Z"
+              fill="#080f20"/>
+        <path d="M137 556 Q162 570 190 553 L211 595
+                 Q192 622 136 608 L119 586Z"
+              fill="url(#leather)" stroke="#030814" stroke-width="8"/>
+        <path d="M135 574 Q169 594 202 575 M124 592 Q169 611 208 588"
+              fill="none" stroke="#9ac1ca" stroke-width="4"/>
+        <path d="M132 608 Q173 628 211 600 L229 624
+                 Q186 651 120 632Z" fill="#040a16" stroke="#030814" stroke-width="5"/>
+        <rect x="137" y="568" width="59" height="12" rx="4" fill="#13233a" stroke="#89aebc" stroke-width="3"/>
+      </g>
+      <!-- Back coat flap and harness -->
+      <path d="M103 202 Q73 243 79 329 L60 418 Q93 408 120 376 L137 260Z"
+            fill="#102239" stroke="#030916" stroke-width="8"/>
+      <path d="M91 282 Q109 313 98 359 L77 399" fill="none" stroke="#7c9fb0" stroke-width="4"/>
+      <!-- Waist belt and holster -->
+      <path d="M82 337 Q144 355 207 332 L213 360 Q146 381 80 363Z"
+            fill="#101a2b" stroke="#030814" stroke-width="7"/>
+      <path d="M132 346 L160 347 L163 373 L130 373Z"
+            fill="url(#metal)" stroke="#030814" stroke-width="4"/>
+      <path d="M191 355 L223 360 L218 427 L187 420Z"
+            fill="#15243a" stroke="#030814" stroke-width="6"/>
+      <path d="M196 370 L214 374 L211 401" fill="none" stroke="#86b8c7" stroke-width="3"/>
+      <!-- Torso: fitted armored jacket with breast plates and seam shaping -->
+      <path d="M111 161 Q83 171 77 205 L69 283
+               Q76 321 88 356 Q144 378 207 349
+               L220 277 Q225 222 201 184
+               L177 164 L151 183Z"
+            fill="url(#jacketLight)" stroke="#030916" stroke-width="9" stroke-linejoin="round"/>
+      <path d="M114 177 Q138 198 161 180 L190 203
+               Q177 249 189 319 L145 345 L99 322
+               Q114 254 94 207Z"
+            fill="#14253c" stroke="#789cad" stroke-width="4"/>
+      <path d="M119 190 L143 211 L168 190 L186 219
+               L163 252 L145 270 L125 249 L104 216Z"
+            fill="#344e69" stroke="#071020" stroke-width="5"/>
+      <path d="M145 211 L157 224 L150 245 L138 231Z" fill="#0a1528"/>
+      <path d="M91 213 Q105 204 121 229 L110 277
+               Q90 276 81 255Z" fill="#0c1a30"/>
+      <path d="M190 213 Q210 237 199 278 L183 295
+               Q185 250 175 230Z" fill="#091426"/>
+      <path d="M103 283 Q124 301 145 294 L137 326 Q112 333 93 313Z"
+            fill="#0a1427" stroke="#718fa4" stroke-width="3"/>
+      <path d="M163 286 Q183 297 202 282 L195 321 Q173 336 156 323Z"
+            fill="#0a1427" stroke="#718fa4" stroke-width="3"/>
+      <path d="M117 205 Q124 249 117 278 M178 205 Q188 247 178 275"
+            stroke="#b7d5d7" stroke-width="4" opacity=".52" fill="none"/>
+      <path d="M119 302 Q143 317 169 300 M112 322 Q144 339 183 319"
+            stroke="#060e20" stroke-width="7" fill="none"/>
+      <path d="M145 221 L145 322" stroke="#8ab8c7" stroke-width="3"/>
+      <path d="M137 242 L151 248 L137 257" stroke="#d1e9e6" stroke-width="3" fill="none"/>
+      <path d="M104 191 L92 223 M191 193 L204 223" stroke="#53dce9" stroke-width="4" opacity=".7"/>
+      <!-- Neck and collar -->
+      <path d="M123 132 Q145 151 169 131 L174 179
+               Q147 198 118 176Z"
+            fill="url(#skin)" stroke="#081020" stroke-width="6"/>
+      <path d="M117 155 L142 182 L129 202 L101 174Z"
+            fill="#d6e4e0" stroke="#07101c" stroke-width="5"/>
+      <path d="M170 154 L148 183 L160 203 L186 172Z"
+            fill="#b9cfd0" stroke="#07101c" stroke-width="5"/>
+      <!-- Far arm: full sleeve and glove -->
+      <g transform="rotate(-5 79 220)">
+        <path d="M88 189 Q58 184 48 213 L44 270
+                 Q55 294 77 305 L99 276 Q90 247 108 222Z"
+              fill="#263c58" stroke="#030916" stroke-width="8"/>
+        <path d="M51 228 Q74 226 91 246 L79 275 Q59 275 48 257Z" fill="#0b172a"/>
+        <path d="M58 284 Q79 299 98 283 L105 306 Q84 325 59 309Z"
+              fill="#14243a" stroke="#030916" stroke-width="6"/>
+        <path d="M60 295 L92 307" stroke="#83acb8" stroke-width="4"/>
+        <path d="M64 307 Q81 300 96 316 L92 340
+                 Q74 353 55 336Z" fill="url(#leather)" stroke="#030916" stroke-width="6"/>
+        <path d="M61 322 Q49 332 51 345 Q58 353 67 344 L76 332"
+              fill="#223952" stroke="#030916" stroke-width="4"/>
+      </g>
+      <!-- Near arm, forearm guard and fully drawn hand -->
+      <g transform="rotate(7 207 217)">
+        <path d="M204 189 Q232 185 244 214 L245 262
+                 Q237 284 225 302 L205 318
+                 Q184 308 187 286 L202 252Z"
+              fill="url(#jacketLight)" stroke="#030916" stroke-width="8"/>
+        <path d="M209 209 Q229 220 229 243 L211 263 L195 244Z" fill="#13243a"/>
+        <path d="M197 261 Q217 273 240 260 L229 291 Q207 302 188 285Z"
+              fill="#091426"/>
+        <path d="M193 295 Q215 309 233 294 L244 317
+                 Q219 341 188 322Z" fill="#152940" stroke="#030916" stroke-width="6"/>
+        <path d="M197 310 L230 324" stroke="#83a8b7" stroke-width="4"/>
+        <path d="M208 322 Q229 313 243 327 Q254 341 243 357
+                 L227 371 Q208 371 199 354Z"
+              fill="url(#leather)" stroke="#030916" stroke-width="6"/>
+        <path d="M209 335 Q197 340 195 354 Q198 365 208 362 L218 348"
+              fill="#263b54" stroke="#030916" stroke-width="4"/>
+        <path d="M231 344 Q246 348 246 362 Q240 372 230 366 L222 353
+                 M216 357 Q229 367 223 381 Q216 386 211 376 L208 361"
+              fill="#263b54" stroke="#030916" stroke-width="4"/>
+        <path d="M208 337 L222 345 M215 361 L228 368"
+              stroke="#9ac1ca" stroke-width="2.5"/>
+      </g>
+      <!-- Face and head: three-quarter angle, full facial structure -->
+      <g transform="rotate(-1.5 145 90)">
+        <path d="M103 61 Q112 26 147 26
+                 Q187 29 196 66 L190 115
+                 Q181 152 148 162 Q116 154 104 123Z"
+              fill="url(#skinLight)" stroke="#050b18" stroke-width="7"/>
+        <path d="M163 32 Q200 57 188 111 Q180 139 151 156
+                 Q169 119 161 95 Q178 68 163 32Z"
+              fill="#80505a" opacity=".62"/>
+        <path d="M106 95 Q120 81 137 94 Q129 109 108 108Z"
+              fill="#f0dfcf" stroke="#3b2638" stroke-width="3"/>
+        <path d="M149 92 Q168 79 185 91 Q172 106 151 106Z"
+              fill="#f2e2d2" stroke="#3b2638" stroke-width="3"/>
+        <ellipse cx="123" cy="96" rx="6.3" ry="9.2" fill="#9b664d"/>
+        <ellipse cx="168" cy="94" rx="6.5" ry="9.0" fill="#65c7d1"/>
+        <ellipse cx="125" cy="97" rx="3" ry="6" fill="#101426"/>
+        <ellipse cx="170" cy="95" rx="3" ry="6" fill="#101426"/>
+        <circle cx="127" cy="93" r="2" fill="#fff"/>
+        <circle cx="172" cy="91" r="2" fill="#fff"/>
+        <path d="M104 83 Q121 69 140 83 M148 80 Q169 65 188 80"
+              stroke="#121629" stroke-width="7" fill="none" stroke-linecap="round"/>
+        <path d="M145 98 Q142 119 133 130 Q146 136 156 127"
+              stroke="#a96064" stroke-width="4" fill="none"/>
+        <path d="M131 144 Q148 151 164 140 Q159 157 143 157 Q133 153 131 144Z"
+              fill="#873d54" stroke="#5e2e43" stroke-width="3"/>
+        <path d="M135 145 Q148 148 159 143" stroke="#ffdbbf" stroke-width="2.5" fill="none"/>
+        <path d="M104 115 Q114 134 130 139 M171 119 Q182 123 188 111"
+              stroke="#a86261" stroke-width="3" fill="none" opacity=".62"/>
+        <path d="M104 82 Q91 68 91 93 Q96 119 108 123Z"
+              fill="url(#skin)" stroke="#523242" stroke-width="4"/>
+        <path d="M97 94 Q108 89 104 108" stroke="#96535c" stroke-width="3" fill="none"/>
+        <!-- Distinct auburn hair: crown, side locks and animated long ponytail -->
+        <g transform="rotate({fmt(pony)} 150 46)">
+          <path d="M98 90 Q84 56 106 34 Q111 5 143 17
+                   Q173 0 196 27 Q216 49 194 87
+                   L181 74 Q185 47 165 39
+                   Q158 61 145 76 L140 47
+                   Q126 72 109 91Z"
+                fill="#502432" stroke="#100d1a" stroke-width="8" stroke-linejoin="round"/>
+          <path d="M106 57 Q111 24 137 25 Q122 48 125 68 L109 81Z"
+                fill="#b45457" stroke="#221523" stroke-width="3"/>
+          <path d="M142 24 Q166 8 183 33 Q164 39 157 65Z"
+                fill="#783340" stroke="#180f1b" stroke-width="4"/>
+          <path d="M181 34 Q204 49 189 74 Q181 57 169 55Z"
+                fill="#2a1a30" stroke="#100d1a" stroke-width="4"/>
+          <path d="M193 53 Q230 65 237 107 Q218 98 209 116
+                   Q202 91 184 80Z"
+                fill="#3a2035" stroke="#100d1a" stroke-width="7"/>
+          <path d="M201 68 Q220 82 224 102 M112 47 Q123 28 137 31
+                   M150 24 Q167 17 179 33"
+                stroke="#ffc17c" stroke-width="4" fill="none" opacity=".7"/>
+          <path d="M112 79 Q101 100 111 117 M178 74 Q191 91 185 110"
+                stroke="#c16c68" stroke-width="3" fill="none"/>
+        </g>
+      </g>
+      <!-- Harness, knee guards, stitching, insignia, reflective trim -->
+      <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M105 192 L188 333 M184 196 L112 336"
+              stroke="#879fad" stroke-width="4" opacity=".72"/>
+        <path d="M124 276 Q145 289 170 272 M120 291 Q146 308 174 288"
+              stroke="#050d1e" stroke-width="5"/>
+        <path d="M89 335 Q143 357 203 335" stroke="#94b3be" stroke-width="3"/>
+        <path d="M95 396 L108 404 L104 436 M185 400 L174 411 L177 441"
+              stroke="#8caab8" stroke-width="3"/>
+        <path d="M98 496 Q115 511 135 502 M144 502 Q166 511 184 498"
+              stroke="#8bb5c3" stroke-width="3"/>
+      </g>
+      <path d="M81 209 Q70 231 73 250 M213 214 Q230 239 220 261"
+            stroke="#4ee2ee" stroke-width="4" fill="none" opacity=".75"/>
+      <path d="M113 178 Q143 193 174 175" stroke="#ff7a9f" stroke-width="3" fill="none" opacity=".7"/>
+      <circle cx="145" cy="358" r="6" fill="#bff9f3" stroke="#081321" stroke-width="3"/>
+      <!-- Compact designed sidearm at the belt -->
+      <g transform="translate(205 402) rotate(9)">
+        <path d="M0 0 L45 0 L54 12 L49 29 L13 27 L7 61
+                 L-5 63 L-12 35 L-8 17Z"
+              fill="url(#metal)" stroke="#060d19" stroke-width="5" stroke-linejoin="round"/>
+        <path d="M4 7 L38 7 M3 16 L40 16" stroke="#edf7e9" stroke-width="3"/>
+        <path d="M12 28 L31 31 L25 58 L7 55Z" fill="#14263b" stroke="#050b18" stroke-width="4"/>
+        <path d="M13 38 L25 42 M10 48 L22 51" stroke="#9ec8d0" stroke-width="3"/>
+      </g>
+    </g>
+    """
+
+
 def effects(t: float) -> str:
     impact = smooth(2.55, 3.0, t) * (1.0 - smooth(3.5, 4.15, t))
     arcs = []
@@ -562,6 +777,7 @@ def frame_svg(frame: int) -> str:
     <g transform="translate({fmt(camera_x)} {fmt(camera_y)})">
       {background(t)}
       {character(t)}
+      {secondary_character(t)}
       {effects(t)}
     </g>
     <rect width="1280" height="720" fill="url(#microHatch)" opacity=".14"/>
