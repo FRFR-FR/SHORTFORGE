@@ -27,7 +27,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install 2D rendering dependencies and yt-dlp
+      - name: Install Deno JavaScript runtime for YouTube extraction
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.6.1
+
+      - name: Install 2D rendering dependencies and yt-dlp with EJS support
         run: |
           set -euo pipefail
           sudo apt-get update
@@ -36,6 +41,7 @@ jobs:
           "$RUNNER_TEMP/fullbody-venv/bin/python" -m pip install --upgrade pip
           "$RUNNER_TEMP/fullbody-venv/bin/python" -m pip install cairosvg pillow yt-dlp
           ffmpeg -version | head -n 1
+          deno --version
           "$RUNNER_TEMP/fullbody-venv/bin/python" -m yt_dlp --version
 
       - name: Download creator-licensed Morevna visual references with yt-dlp
