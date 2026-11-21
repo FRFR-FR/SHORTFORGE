@@ -639,7 +639,7 @@ def create_grease_pencil():
 def setup_scene(output_dir):
     bpy.ops.object.select_all(action="SELECT")
     bpy.ops.object.delete(use_global=False)
-    for datablocks in (bpy.data.meshes,bpy.data.curves,bpy.data.materials,bpy.data.cameras,bpy.data.lights):
+    for datablocks in (bpy.data.meshes,bpy.data.curves,bpy.data.cameras,bpy.data.lights):
         for datablock in list(datablocks):
             if datablock.users==0:
                 datablocks.remove(datablock)
