@@ -1,103 +1,114 @@
-# ANIMEFORGE — Assistant-authored + Claude-optional Three.js 2.5D Anime Studio
+# LINEFORGE — Code-authored, hand-drawn 2.5D anime
 
-ANIMEFORGE is a dedicated horizontal-anime production system inside SHORTFORGE. It does not replace the existing Blender-based vertical Shorts pipeline. The included **NEON VEIL — Run the Last Light** sequence is authored directly in Three.js and original SVG art by the assistant; its animation and rendering do not call Claude or require an Anthropic API key. The Claude Agent SDK remains an optional coding route for future user-generated episode briefs, not a dependency of this authored sequence.
+LINEFORGE is the new horizontal anime path inside SHORTFORGE. It replaces the earlier Three.js/SVG cut-out experiment. The character is drawn as individual frame-by-frame Grease Pencil strokes in Blender's actual 3D world.
 
-## Production target
+## Non-negotiable production rule
 
-- Horizontal 16:9 episodes; 1280×720 review renders and 1920×1080 masters.
-- 30 fps deterministic frame output.
-- 2.5D staging: layered foreground / action plane / background, perspective camera moves, depth parallax, animated lights, atmospheric particles, and optional rigged GLB or layered transparent character artwork.
-- Original anime character designs, environments, dialogue and shot choreography.
-- High-contrast hand-inked/cel-shaded visual direction with vivid electric cyan, hot magenta, ultraviolet and warm amber accents; this is an original cyberpunk anime language, not a recreation of another series.
-- Browser-rendered Three.js frames, then FFmpeg H.264 encoding.
-- Frame-by-frame technical QA plus a report and contact sheet.
-- No music or narration is synthesized unless the episode supplies audio.
+The character is not built from stick figures, body meshes, SVG/PNG/raster body parts, 2D image planes, cut-out puppets, sprite assemblies, downloaded character models or animation footage.
 
-## Why Three.js is the final renderer here
+The character is built from individually coded line paths. Every contour, eyelid, iris, pupil, brow, nose, mouth line, hair lock, seam, clothing fold, finger, knuckle, shadow hatch, rim highlight and action mark is a separate stroke. Each output frame gets a new Grease Pencil drawing. The coordinates are transformed and deformed frame-by-frame into 3D world space; stroke depth, line weight, tapered ends, camera perspective, lighting and parallax make the drawing live inside a 3D scene.
 
-This engine intentionally differs from SHORTFORGE's original vertical pipeline. The episode's authored JavaScript scene module is evaluated in a controlled local browser page, Three.js renders a fixed timestamp, Playwright captures the canvas, and FFmpeg encodes the numbered frames. A deterministic seek API makes every frame independent of browser refresh rate. See the official Three.js renderer docs and Playwright CI guidance.
+The environment is actual 3D geometry: layered towers, windows, structural ribs, cables, elevated walkways, shopfronts, signage, wet street, utility structures, practical neon lighting and a moving perspective camera.
 
-## Create an episode with Claude
+## Free/open-source toolchain
 
-Install Node.js 22+, FFmpeg/ffprobe, then:
+| Tool | Role | Why selected |
+|---|---|---|
+| Blender 4.5.16 LTS + Grease Pencil v3 | Main line-art renderer, animation and 3D stage | Frame-by-frame 2D strokes can exist in 3D space, with camera, depth, layers, modifiers and lighting. |
+| Krita | Free raster animation and cleanup companion | Useful for traditional hand-drawn frame studies, onion-skin checks, paint passes and brush work. |
+| Tahoma2D 1.6.3 | Free traditional 2D animation / FX companion | Provides a 2D production, X-sheet, brush, palette, perspective-grid and compositing workflow. Not used for character cut-out animation here. |
+| FFmpeg / ffprobe | Video encoding and delivery verification | Converts rendered frames to MP4 and confirms actual resolution, codec, frame rate and duration. |
 
-    cd anime-studio
-    npm install
-    npx playwright install chromium
-    export ANTHROPIC_API_KEY="your-key"
-    npm run agent -- "An original 90-second cyberpunk chase about a courier who discovers a memory chip can rewrite one minute of the past" --slug memory-run --quality preview
+Pencil2D is another lightweight open-source frame-by-frame option. OpenToonz is a broader traditional 2D production system. Synfig is a free vector animation option, but emphasizes tweened/vector and rig workflows, so it is not the character renderer here.
 
-Claude's official Agent SDK is used as the coding agent. It receives a project-local workspace, specialist subagents, and only file authoring / inspection tools. Shell execution is not granted to the model: trusted scripts validate and render the resulting project. The Agent SDK package is documented on npm as @anthropic-ai/claude-agent-sdk.
+### Runtime installation
 
-The agent authors:
-- projects/<slug>/episode.json — episode spec, cast, timeline, asset manifest and output profile.
-- projects/<slug>/episode.js — executable Three.js choreography using the shared ANIMEFORGE kit.
-- projects/<slug>/assets/characters/ — original SVG body layers and JSON rig manifests.
-- projects/<slug>/assets/environments/ — original deep background, middle-ground and foreground SVG plates.
-- projects/<slug>/TASK.md — the supplied creative brief and quality bar.
+On an Ubuntu-based Linux machine or CI runner:
 
-After generation, validate and render:
+    sudo bash anime-studio/lineforge/install_free_tools.sh
 
-    npm run validate -- --project projects/memory-run/episode.json
-    npm run render -- --project projects/memory-run/episode.json --output out/memory-run.mp4
+The installer pins Blender 4.5.16 LTS, installs Krita and FFmpeg from the system package manager, and verifies the Tahoma2D 1.6.3 Linux package by SHA-256 before installing it. All selected software is free/open-source; no AI image credits, paid animation service or copyrighted production asset is required.
 
-## Render profiles
+### Local rendering
 
-| Profile | Resolution | Use |
-|---|---:|---|
-| smoke | 640×360 | Engine/scene validation only |
-| preview | 1280×720 | Review and iteration |
-| master | 1920×1080 | Final horizontal master |
+    LINEFORGE_FPS=30 \
+    LINEFORGE_SECONDS=6 \
+    LINEFORGE_WIDTH=1280 \
+    LINEFORGE_HEIGHT=720 \
+    blender --background --factory-startup --threads 4 \
+      --python-exit-code 1 \
+      --python anime-studio/lineforge/build_handdrawn.py -- \
+      --output-dir out/lineforge
 
-Override the JSON dimensions with --quality when rendering. The project remains 30 fps. A long episode can take substantial time because every frame is rendered and captured; use a short smoke render before a full episode.
+The script writes an editable Blender scene with Grease Pencil drawings, numbered PNG frames and a JSON manifest containing per-frame stroke counts.
 
-## Asset pipeline: actual anime artwork, not primitive-only scenes
+Encode:
 
-ANIMEFORGE supports:
-1. Original transparent PNG character layers attached to articulated 2D pivots.
-2. Rigged GLB characters with animation clips through Three.js GLTFLoader.
-3. Painted environment plates and layered depth cards.
-4. Three-dimensional sets, props, vehicles, lighting and camera choreography.
-5. Procedural vector/toon puppets for smoke tests only.
+    ffmpeg -framerate 30 -start_number 1 \
+      -i out/lineforge/frames/frame_%04d.png \
+      -c:v libx264 -preset slow -crf 17 -pix_fmt yuv420p \
+      -r 30 -movflags +faststart -an \
+      out/lineforge/lineforge-handdrawn-720p.mp4
 
-The included procedural city and puppet are a runnable engine demonstration, not a claim of finished studio-grade anime art. The Claude agent is instructed to author original, transparent 2K SVG character layers plus three detailed 1920×1080 environment plates, record their provenance, and load them into the scene as a layered 2.5D rig. It is not allowed to pass a generated episode with only the fallback puppet. The validator checks the asset manifest and file presence; master renders additionally require the art-complete gate.
+Run the strict stroke QA:
 
-### Recommended folder layout
+    python3 anime-studio/lineforge/qa.py \
+      --video out/lineforge/lineforge-handdrawn-720p.mp4 \
+      --manifest out/lineforge/lineforge-manifest.json \
+      --report out/lineforge/lineforge-qa.json
 
-    projects/<slug>/
-      TASK.md
-      episode.json
-      episode.js
-      assets/
-        characters/<character-id>/
-          model.glb
-          expressions/
-          layers/
-        environments/<environment-id>/
-          foreground/
-          midground/
-          background/
-        audio/
+## Reference research: craft, not copying
 
-Use only original, owned, public-domain or correctly licensed assets. Do not trace existing anime characters, recreate signature costumes, copy frames, or reproduce a show's exact shot sequence.
+The visual target is informed by multiple animation traditions and production approaches:
 
-## Quality gates
+- Cyberpunk: Edgerunners / Studio Trigger: expressive silhouette design, sharp graphic posing, energetic hair and clothing shapes, selective neon contrast, intense face acting and impactful drawn effects.
+- Jujutsu Kaisen / MAPPA: action readability, strong perspective, foreshortening, clear contact poses, spacing, impact drawings, controlled abstraction and expressive character acting.
+- Mob Psycho 100 / Bones: individual animator personality, elastic expression, emotional clarity and freedom in drawn effects.
+- Akira: dense perspective backgrounds, architectural drawing, mechanical detail and convincing physical weight.
+- Fog Hill of Five Elements: ink-like brush energy, fluid action and graphic shape rhythm.
+- Arcane: a useful non-anime hybrid reference for painterly lighting, 3D depth, layered composition and material treatment.
 
-A render is not marked complete merely because Chromium opened. ANIMEFORGE checks:
+The references are for high-level craft analysis only. No copyrighted anime frame, model sheet, character, costume, script, shot sequence, logo, music or episode is included in the project.
 
-- Valid 16:9 dimensions and complete, gap-free shot coverage.
-- Scene module syntax and required exported function.
-- Character IDs, shot descriptions, visual actions, camera intent and art direction.
-- Full frame count, PNG dimensions, blank-frame / near-frozen-frame checks.
-- FFmpeg exit status and ffprobe codec, size, duration and frame-rate verification.
-- A contact sheet and JSON QA report.
+## Art and animation checklist
 
-Automated checks cannot prove good anatomy, acting, composition, emotional storytelling or final illustration quality. A human art review remains mandatory before calling an episode release-ready.
+1. Anatomy: convincing head construction, neck, torso, shoulder girdle, elbows, wrists, pelvis, knees, ankles, hands and believable proportions.
+2. Face: eyes are drawn from lids, iris, pupil, lashes and brows; nose and mouth have structure; expressions change with acting.
+3. Hair: individual locks, layered clumps, flyaways and follow-through; never one helmet-like silhouette.
+4. Line craft: tapered ends, varied line weight, selective broken contours, clean overlaps, secondary detail, deliberate roughness and no mechanically uniform outline.
+5. Construction: internal contours, cross-contours and hatching clarify volume; line placement changes with body turn and perspective.
+6. Frame animation: each frame has a new Grease Pencil drawing; readable keys and breakdowns, anticipation, arcs, spacing, overshoot, holds, follow-through and recovery.
+7. Action: clear contact poses, foreshortened limbs, directional smears, speed lines and impact accents that support rather than obscure the action.
+8. 3D staging: perspective camera, camera movement, depth-separated line geometry, parallax, spatially placed strokes and real 3D environment lighting.
+9. Colour and finish: controlled palette, coloured rim strokes, selective shadow hatching, atmospheric depth and restrained bloom that never washes away the ink.
+10. Environment: detailed, occupied 3D locations with foreground / midground / background layers, practical light sources, mechanical detail and believable scale.
+11. Cinematography: shots have deliberate screen direction, readable staging, motivated camera moves, close-ups, wide shots and controlled shot rhythm.
+12. Delivery: 16:9, 720p review, 30 fps, H.264 MP4, exact frame count, contact sheet, source Blender scene, manifest and QA report.
+13. Human review: playback and frame review for line popping, anatomy, perspective, expression, timing, visual clarity and continuity.
 
-## GitHub Actions
+Automated QA proves the character is rendered from Grease Pencil strokes and the video is complete. It cannot prove that the artwork equals a professional studio series. That requires repeated redraw, animation supervision and visual review.
 
-Run Actions → ANIMEFORGE episode. Add ANTHROPIC_API_KEY as a repository Actions secret to enable Claude generation. Supply a concept, duration, quality and optional release publishing. The workflow publishes MP4 and QA files as a GitHub Release; it does not use Actions artifacts.
+## Current proof-of-pipeline scope
 
-## Safety and budget
+The first LINEFORGE CI target is a six-second, 720p, 30 fps original action sample. It is a technical and art-direction prototype for the line-only pipeline, not a claim that six seconds of code can automatically equal a full studio production. Higher fidelity requires more authored drawings, more poses, cleanup and shot-specific animation.
 
-The Claude agent has a configurable CLAUDE_MAX_BUDGET_USD limit and CLAUDE_MODEL override. Default model: claude-opus-5-5. It is not permitted to run shell commands. Local validation, browser rendering and encoding are performed by the repository's own scripts.
+## Workflow
+
+GitHub Actions workflow: .github/workflows/lineforge-anime.yml.
+
+It installs the open tools, checks the Blender Grease Pencil API, generates the city scene, redraws the character strokes on every frame, encodes the MP4, generates a contact sheet, runs strict line-art QA and publishes the MP4 plus editable Blender scene, manifest and QA report as a separate GitHub prerelease.
+
+## Official software and research links
+
+- Blender Grease Pencil manual: https://docs.blender.org/manual/en/4.5/grease_pencil/introduction.html
+- Blender Grease Pencil animation: https://docs.blender.org/manual/en/4.5/grease_pencil/animation/introduction.html
+- Blender Grease Pencil API: https://docs.blender.org/api/4.5/bpy.types.GreasePencilDrawing.html
+- Krita animation manual: https://docs.krita.org/en/user_manual/animation.html
+- Tahoma2D: https://tahoma2d.org/
+- Tahoma2D source and releases: https://github.com/tahoma2d/tahoma2d
+- Pencil2D: https://www.pencil2d.org/about
+- Synfig: https://www.synfig.org/
+- Studio Trigger / Netflix on Cyberpunk: Edgerunners: https://about.netflix.com/en/news/netflix-cd-projekt-red-and-studio-trigger-come-together-for-global-anime-cyberpunk-edgerunners
+- Animation World Network on Edgerunners: https://www.awn.com/animationworld/cyberpunk-edgerunners-vibrant-ode-retro-anime
+- Crunchyroll interview with MAPPA leadership on Jujutsu Kaisen: https://www.crunchyroll.com/hi/news/interviews/2022/8/8/interview-manabu-otsuka-hiroshi-seko-and-hiroaki-matsutani-on-the-future-of-jujutsu-kaisen
+- Crunchyroll interview with Mob Psycho 100 director: https://www.crunchyroll.com/news/interviews/2019/3/30/interview-mob-psychos-director-is-changing-hearts-and-getting-in-trouble-with-the-president-of-bones
