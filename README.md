@@ -147,7 +147,7 @@ The earlier line-only Grease Pencil / 3D-stage experiment has been superseded. T
 - Fully illustrated 2D backgrounds, foreground/midground separation, atmosphere and camera drift.
 - No stick figures, outline-only people, 3D mesh stage, or primitive-only prop shortcuts.
 - Free toolchain: Krita, Tahoma2D / OpenToonz, Python + CairoSVG, FFmpeg and yt-dlp for licensed visual reference research.
-- Morevna Project anime references are downloaded video-only into temporary CI storage; creator licence declarations are checked, soundtrack audio is excluded, and source footage is never placed in the finished video.
+- Morevna Project anime and illustrated-animation references are downloaded with yt-dlp from direct Creative Commons file URLs into temporary CI storage; their muxed audio is stripped and original downloads deleted before visual sampling. Only abstract palette/contrast measurements inform original art; no footage, frames, characters or sound enter the finished video.
 - CI target: 6-second, 1280×720, 30 fps review sample with two fully illustrated characters; automated QA checks anatomy metadata, frame count, motion, 2D stage and no audio.
 
 Read the [FULLBODY2D production guide](anime-studio/fullbody2d/README.md), [2D character renderer](anime-studio/fullbody2d/render.py), and [yt-dlp reference downloader](anime-studio/fullbody2d/download_references.py). GitHub Actions workflow: **FULLBODY2D — fully rendered anime characters on a 2D stage**.
