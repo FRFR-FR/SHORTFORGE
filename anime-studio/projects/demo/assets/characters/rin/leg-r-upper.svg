@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 480" width="2048" height="2048"><defs>
+<linearGradient id="hair" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#607590"/><stop offset=".25" stop-color="#273650"/><stop offset=".63" stop-color="#10182b"/><stop offset="1" stop-color="#050a16"/></linearGradient>
+<linearGradient id="skin" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#ffe7dc"/><stop offset=".4" stop-color="#e8b0a7"/><stop offset=".78" stop-color="#ba7180"/><stop offset="1" stop-color="#6c3b58"/></linearGradient>
+<linearGradient id="coat" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#53617c"/><stop offset=".3" stop-color="#293550"/><stop offset=".68" stop-color="#121b31"/><stop offset="1" stop-color="#070c19"/></linearGradient>
+<linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f4ffff"/><stop offset=".25" stop-color="#aab9d0"/><stop offset=".55" stop-color="#384863"/><stop offset=".82" stop-color="#15223a"/><stop offset="1" stop-color="#d4e5f7"/></linearGradient>
+<linearGradient id="cyan" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#e6ffff"/><stop offset=".35" stop-color="#4df4f1"/><stop offset="1" stop-color="#087fb8"/></linearGradient>
+<linearGradient id="pink" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffd6f1"/><stop offset=".4" stop-color="#ff4eae"/><stop offset="1" stop-color="#8b155f"/></linearGradient>
+<filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="7"/></filter>
+<filter id="shade" x="-30%" y="-30%" width="160%" height="180%"><feGaussianBlur stdDeviation="8"/></filter>
+</defs>
+<path d="M219 23 Q161 -4 73 30 L45 150 L92 290 L185 306 L241 159Z" fill="#121b30" stroke="#050916" stroke-width="19"/>
+<path d="M200 40 L81 48 L66 144 L102 246 L189 236 L223 139Z" fill="#28364f"/>
+<path d="M223 136 L69 150 L91 201 L209 187Z" fill="#111b30" stroke="#71809a" stroke-width="8"/>
+<path d="M198 54 L95 65 L102 97 L205 87Z" fill="url(#pink)"/><path d="M206 206 L93 223" stroke="#36e9e9" stroke-width="10"/>
+<path d="M183 243 L101 260 L115 313 L187 298Z" fill="#0c1325" stroke="#8591a9" stroke-width="7"/>
+<circle cx="143" cy="155" r="21" fill="#101a2e" stroke="#8e9cb2" stroke-width="7"/><circle cx="143" cy="155" r="8" fill="#ff4fac"/></svg>
