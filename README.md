@@ -138,6 +138,15 @@ docs/                   Architecture, schema, research and review guides
 This repository package is a new implementation. Its local validation suite can be run with `python3 -m unittest discover -s tests -v`. A GitHub Actions render can only be verified after this project is pushed to a GitHub repository and the workflow is run there.
 
 
-## ANIMEFORGE — horizontal 2.5D anime episodes
+## LINEFORGE — hand-drawn horizontal 2.5D anime
 
-The separate `anime-studio/` subsystem adds a Claude-powered coding agent for original horizontal 16:9 anime episodes using Three.js, HTML, deterministic Playwright frame capture, FFmpeg encoding and frame QA. It does not change the existing Blender-based vertical Shorts workflow. Read [ANIMEFORGE documentation](anime-studio/README.md) and its [production standard](anime-studio/docs/PRODUCTION_STANDARD.md). The manual workflow is **Actions → ANIMEFORGE episode**; add `ANTHROPIC_API_KEY` to repository Actions secrets before requesting Claude-generated episodes. Master renders require verified original character and environment art assets.
+The previous SVG cut-out character prototype has been retired. The new LINEFORGE path uses Blender Grease Pencil drawings authored stroke-by-stroke in 3D world space. Every output frame receives a new drawing containing individual character contours, facial lines, hair locks, garment folds, hatching, highlights and animated effects. The character is not a mesh, image plane, SVG puppet or assembled 2D body parts.
+
+- Blender 4.5.16 LTS + Grease Pencil v3 is the primary renderer.
+- Krita and Tahoma2D are installed as free traditional 2D drawing / cleanup companions.
+- The city environment is real 3D geometry with 3D camera movement, perspective and lighting.
+- The first proof sequence targets horizontal 16:9, 720p, 30fps.
+- A strict QA report checks the Grease Pencil drawings and confirms that character mesh and cut-out asset counts are zero.
+- The release includes MP4, editable Blender scene, stroke manifest, QA report and contact sheet.
+
+Read the [LINEFORGE production guide](anime-studio/README.md) and [stroke-by-stroke renderer](anime-studio/lineforge/build_handdrawn.py). GitHub Actions workflow: LINEFORGE hand-drawn 2.5D anime.
