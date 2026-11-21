@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       concept:
-        description: Original anime episode concept (blank runs the 10-second engine smoke test)
+        description: Optional Claude-generated episode concept (blank renders the assistant-authored NEON VEIL episode)
         required: false
         type: string
       slug:
@@ -96,11 +96,27 @@ jobs:
           node src/agent.mjs "$CONCEPT" --slug "$SAFE_SLUG" --duration "$DURATION_SECONDS" --quality "$QUALITY"
           node src/render.mjs --project "projects/$SAFE_SLUG/episode.json" --quality "$QUALITY" --output "out/$SAFE_SLUG.mp4"
 
-      - name: Render the built-in engine smoke scene
-        if: ${{ inputs.concept == '' }}
+      - name: Render the assistant-authored NEON VEIL 720p episode
+        if: \${{ inputs.concept == '' }}
         run: |
           mkdir -p out
-          node src/render.mjs --project projects/demo/episode.json --quality smoke --output out/animeforge-smoke.mp4
+          node src/render.mjs --project projects/demo/episode.json --quality preview --output out/neon-veil-preview.mp4
+
+      - name: Publish NEON VEIL 720p preview as a prerelease
+        if: \${{ success() && github.event_name == 'pull_request' }}
+        env:
+          GH_TOKEN: \${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="animeforge-neon-veil-preview-\${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" \
+            "out/neon-veil-preview.mp4" \
+            "out/neon-veil-preview.qa.json" \
+            "out/neon-veil-preview.contact-sheet.png" \
+            --target "$GITHUB_SHA" \
+            --title "NEON VEIL — 720p review render #\${GITHUB_RUN_NUMBER}" \
+            --notes "Assistant-authored 2.5D anime sequence. 15 seconds, 1280x720, 30 fps. See QA report and contact sheet attached." \
+            --prerelease
 
       - name: Publish MP4 and QA files as a GitHub Release
         if: ${{ inputs.publish_release }}
