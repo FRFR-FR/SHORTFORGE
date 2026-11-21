@@ -8,7 +8,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from PIL import Image, ImageStat
+from PIL import Image, ImageChops, ImageStat
 
 
 def probe(path: Path) -> dict:
@@ -33,13 +33,15 @@ def main() -> None:
     frames_dir = Path(args.frames_dir)
     manifest = json.loads(Path(args.manifest).read_text(encoding="utf-8"))
     data = probe(video)
-    streams = [s for s in data.get("streams", []) if s.get("codec_type") == "video"]
+    streams = data.get("streams", [])
+    video_streams = [s for s in streams if s.get("codec_type") == "video"]
+    audio_streams = [s for s in streams if s.get("codec_type") == "audio"]
     errors = []
-    if len(streams) != 1:
+    if len(video_streams) != 1:
         errors.append("Expected exactly one video stream.")
-        stream = {}
-    else:
-        stream = streams[0]
+    if audio_streams:
+        errors.append("The reference sample must contain no audio streams.")
+    stream = video_streams[0] if len(video_streams) == 1 else {}
 
     expected_frames = int(manifest["frames"])
     actual_frames = int(stream.get("nb_read_frames") or 0)
@@ -60,6 +62,8 @@ def main() -> None:
         errors.append("Character must be full-colour and shaded, not line-only.")
     if manifest.get("stage") != "2D canvas only":
         errors.append("The final stage must be a 2D canvas.")
+    if int(manifest.get("character_count", 0)) < 2:
+        errors.append("At least two fully designed human characters are required.")
     if manifest.get("audio") != "none":
         errors.append("This reference test must not add soundtrack audio.")
     if manifest.get("reference_video_frames_in_final_output") is not False:
@@ -97,8 +101,10 @@ def main() -> None:
     # The beginning and action/recovery sample must not be identical.
     if len(frame_files) >= 3:
         with Image.open(frame_files[0]).convert("RGB") as first, Image.open(frame_files[-1]).convert("RGB") as last:
-            diff = ImageStat.Stat(Image.blend(first, last, 0.5)).stddev
-            motion_score = round(sum(diff) / 3.0, 3)
+            diff = ImageChops.difference(first, last)
+            motion_score = round(sum(ImageStat.Stat(diff).mean) / 3.0, 3)
+            if motion_score < 1.0:
+                errors.append("The opening and ending frames are too similar; visible animation motion is required.")
     else:
         motion_score = 0.0
         errors.append("Insufficient frames to verify motion.")
