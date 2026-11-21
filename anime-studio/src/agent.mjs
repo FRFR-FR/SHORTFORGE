@@ -64,11 +64,11 @@ const task = [
   'Render profile: ' + quality + ' (' + dimensions[0] + 'x' + dimensions[1] + ')',
   'Frame rate: 30 fps',
   '',
-  'Create an original horizontal 16:9 anime episode. Deliver a coherent script, cast, scene staging, shot-by-shot camera plan and expressive timed action. The visual direction should be a premium, high-energy cyberpunk action anime with saturated neon, bold ink contours, painted cel-shading, detailed layered city environments, motivated camera motion, dynamic perspective and atmospheric effects. It must be an original work; do not reproduce any existing show's characters, exact costume designs, scenes, frames, logos, scripts or signature compositions.',
+  'Create an original horizontal 16:9 anime episode. Deliver a coherent script, cast, scene staging, shot-by-shot camera plan and expressive timed action. The visual direction should be a premium, high-energy cyberpunk action anime with saturated neon, bold ink contours, painted cel-shading, detailed layered city environments, motivated camera motion, dynamic perspective and atmospheric effects. It must be an original work; do not reproduce any existing show’s characters, exact costume designs, scenes, frames, logos, scripts or signature compositions.',
   '',
   'Production expectation: use Three.js 2.5D depth layering, not a static slideshow. Create foreground occlusion, midground character action, distant parallax architecture, camera dolly/orbit, lighting changes, secondary animation and purposeful cuts. Use the shared runtime kit. Do not use primitive low-poly cubes as the main characters or final environment art.',
   '',
-  'Edit only episode.json and episode.js in this project directory. Do not edit repository engine files. Do not run shell commands. Keep module imports local to three and ../../runtime/kit.js, or project-local assets. If original final art assets are not present, explicitly leave assets_complete=false and describe the missing asset pack in the JSON.'
+  'Create the original layered SVG character art and three detailed SVG environment plates described in the production standard. Edit episode.json, episode.js and files under assets/characters/ and assets/environments/ only. Do not edit repository engine files or run shell commands. Keep module imports local to three and ../../runtime/kit.js. Add all artwork to the project.assets manifest and set assets_complete=true only after every required file exists and is loaded by the scene.'
 ].join('\n');
 fs.writeFileSync(path.join(projectDir, 'TASK.md'), task, 'utf8');
 
@@ -86,7 +86,7 @@ const systemPrompt = [
   'Add every authored character/environment asset to project.assets with a project-relative path, a descriptive kind (character_layer or environment_plate), and license "original Claude-authored vector artwork". Set assets_complete=true only when all required artwork files exist and are actually used by the scene. The renderer/validator enforces this manifest.',
   'Give the protagonist a distinctive original silhouette, readable facial expression, clear goal and physical acting. Every action needs anticipation, contact or reaction, follow-through and a readable held pose.',
   'Design complex environments with foreground, middle distance and skyline depth. Avoid empty stages, single-object scenes, flat text slides, low-poly placeholders and repeated camera angles.',
-  'The reference direction is broad cyberpunk anime craft only: saturated neon, painterly cel shading, controlled black linework, expressive character acting, fast cinematic editing and atmospheric city depth. Never copy a named show's distinctive designs, character likenesses, props, logos, frames or exact scene choreography.',
+  'The reference direction is broad cyberpunk anime craft only: saturated neon, painterly cel shading, controlled black linework, expressive character acting, fast cinematic editing and atmospheric city depth. Never copy a named show’s distinctive designs, character likenesses, props, logos, frames or exact scene choreography.',
   'A production-quality master must not claim assets_complete=true unless actual original layered artwork / rigged models and detailed environment assets are linked in the project assets directory. Procedural kit puppets are smoke-test fallbacks only.',
   'Use the storyboard-director, anime-art-director, animation-engineer and continuity-supervisor subagents for independent passes, then reconcile their feedback into the final files.',
   'Do not state that a render passed; the repository validator and renderer will run after your work.'
@@ -100,7 +100,7 @@ const agents = {
   },
   'anime-art-director': {
     description: 'Defines original character silhouettes, palette, lighting, linework and environment art direction.',
-    prompt: 'Act as an anime art director. Establish a coherent original style bible, distinctive cast silhouettes, palette, lighting and dense environment design. Do not imitate a specific show's designs. Write your feedback to art-review.md.',
+    prompt: 'Act as an anime art director. Establish a coherent original style bible, distinctive cast silhouettes, palette, lighting and dense environment design. Do not imitate a specific show’s designs. Write your feedback to art-review.md.',
     tools: ['Read', 'Write', 'Edit', 'Glob', 'Grep']
   },
   'animation-engineer': {
