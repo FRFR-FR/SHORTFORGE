@@ -52,22 +52,32 @@ jobs:
             --output-dir "$RUNNER_TEMP/visual-reference"
           # The downloads and contact sheets are temporary research material.
           # They are never added to the repository or finished episode.
-          for source in morevna-demo morevna-episode-3; do
+          for source in morevna-episode-3 peppercarrot-episode-6; do
             VIDEO="$(find "$RUNNER_TEMP/visual-reference/$source" -maxdepth 1 -type f \( -name '*.mp4' -o -name '*.mkv' -o -name '*.webm' -o -name '*.mov' \) -print -quit)"
             test -n "$VIDEO"
             ffmpeg -hide_banner -loglevel error -y -i "$VIDEO" \
               -vf "fps=1/8,scale=420:-1,tile=2x2" -frames:v 1 \
               "$RUNNER_TEMP/visual-reference/$source-contact-sheet.png"
           done
+          "$RUNNER_TEMP/fullbody-venv/bin/python" anime-studio/fullbody2d/analyze_reference.py \
+            --images \
+            "$RUNNER_TEMP/visual-reference/morevna-episode-3-contact-sheet.png" \
+            "$RUNNER_TEMP/visual-reference/peppercarrot-episode-6-contact-sheet.png" \
+            --output "$RUNNER_TEMP/visual-reference/reference-style-guide.json"
 
       - name: Render two fully coloured 2D human characters and designed props
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/fullbody2d-output"
           "$RUNNER_TEMP/fullbody-venv/bin/python" anime-studio/fullbody2d/render.py \
-            --output-dir "$RUNNER_TEMP/fullbody2d-output"
+            --output-dir "$RUNNER_TEMP/fullbody2d-output" \
+            --reference-style-guide "$RUNNER_TEMP/visual-reference/reference-style-guide.json"
           test -s "$RUNNER_TEMP/fullbody2d-output/fullbody2d-scene.svg"
           test -s "$RUNNER_TEMP/fullbody2d-output/fullbody2d-manifest.json"
+          cp "$RUNNER_TEMP/visual-reference/reference-style-guide.json" \
+            "$RUNNER_TEMP/fullbody2d-output/reference-style-guide.json"
+          cp "$RUNNER_TEMP/visual-reference/reference-attribution.json" \
+            "$RUNNER_TEMP/fullbody2d-output/reference-attribution.json"
 
       - name: Encode 720p H.264 review master
         run: |
@@ -108,7 +118,9 @@ jobs:
             "$RUNNER_TEMP/fullbody2d-output/fullbody2d-contact-sheet.png" \
             "$RUNNER_TEMP/fullbody2d-output/fullbody2d-manifest.json" \
             "$RUNNER_TEMP/fullbody2d-output/fullbody2d-qa.json" \
+            "$RUNNER_TEMP/fullbody2d-output/reference-style-guide.json" \
+            "$RUNNER_TEMP/fullbody2d-output/reference-attribution.json" \
             --target "$GITHUB_SHA" \
             --title "FULLBODY2D — rendered 2D character test #\${GITHUB_RUN_NUMBER}" \
-            --notes "Original full-colour 2D characters and designed props on a 2D stage. 6 seconds, 1280x720, 30fps, no audio. Licensed Morevna visual references were downloaded video-only to temporary CI storage and are not included in the episode. Attribution is documented in the repository guide." \
+            --notes "Original full-colour 2D characters and designed props on a 2D stage. 6 seconds, 1280x720, 30fps, no audio. Creator-licensed Morevna references were downloaded by yt-dlp to temporary CI storage; muxed audio was stripped, original files deleted, and only an abstract palette/contrast guide was used. No reference frames, character art, sound or source footage is included in the episode. See attribution and licence records." \
             --prerelease
