@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
-"""Download only creator-licensed Morevna anime visuals for temporary study.
+"""Fetch openly licensed anime references with yt-dlp, then remove soundtrack.
 
-Video-only yt-dlp format selection intentionally excludes the separately licensed
-soundtracks. Downloads stay outside the repository and are never put in releases.
+The source videos are direct Wikimedia Commons files. YouTube is intentionally
+not used because anonymous GitHub runners are now challenged by YouTube. yt-dlp
+downloads the direct source URLs; ffmpeg immediately creates video-only files.
+Original muxed source files are deleted before reference frame sampling.
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import subprocess
 import sys
@@ -14,24 +17,28 @@ from pathlib import Path
 
 SOURCES = [
     {
-        "key": "morevna-demo",
-        "url": "https://www.youtube.com/watch?v=PThy9_RZQ8c",
-        "title": "The Beautiful Queen Marya Morevna: Demo [HD version]",
-        "creator": "Konstantin Dmitriev / Morevna Project",
-        "visual_license": "CC BY 3.0",
-        "required_description_text": "all visual footage of the demo are provided under the terms of creativecommons attribution 3.0",
-        "credit": "Animation by Morevna Project",
-        "license_url": "https://creativecommons.org/licenses/by/3.0/",
+        "key": "morevna-episode-3",
+        "title": "Morevna Episode 3.0.2 (English)",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/a/a7/Morevna_Episode_3.0.2_%28English%29.webm",
+        "page": "https://commons.wikimedia.org/wiki/File:Morevna_Episode_3.0.2_(English).webm",
+        "creator": "Morevna Project",
+        "visual_license": "CC BY-SA 4.0 (conservatively recorded using the creator's own licence declaration)",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "sha1": "9eb7961b8cfa7e48b47163a99590ab5677ea248a",
+        "attribution": "Animation by Morevna Project. Source soundtrack not used.",
+        "notes": "Futuristic anime series, 10 min 18 sec, 1920x1080 WebM. Wikimedia Commons current file page lists CC BY 4.0; the creator's own description and official project page state CC BY-SA 4.0. This manifest conservatively follows the more restrictive creator-stated CC BY-SA terms.",
     },
     {
-        "key": "morevna-episode-3",
-        "url": "https://www.youtube.com/watch?v=ecVv2IB7f5k",
-        "title": "Morevna Episode 3.0.2 (English)",
-        "creator": "Morevna Project",
+        "key": "peppercarrot-episode-6",
+        "title": "Pepper & Carrot Motion Comic — Episode 6: The Potion Contest",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/7/79/Morevna_Project_-_Pepper%26Carrot_%28animated_comic%29_-_Episode_6_-_The_Potion_Contest.webm",
+        "page": "https://commons.wikimedia.org/wiki/File:Morevna_Project_-_Pepper%26Carrot_(animated_comic)_-_Episode_6_-_The_Potion_Contest.webm",
+        "creator": "Morevna Project; Gregoire Lourme; David Revoy",
         "visual_license": "CC BY-SA 4.0",
-        "required_description_text": "license: creative commons attribution-sharealike 4.0",
-        "credit": "Morevna Project",
         "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "sha1": "165c1cfbbfc5983e1cbdfc93fcf3b8f5a8d258d0",
+        "attribution": "Animation: Morevna Project; Music: Gregoire Lourme (not used); Illustrations: David Revoy.",
+        "notes": "Animated motion comic, 7 min 35 sec, 1920x1080 WebM. Its Commons page records a VRT permission confirmation for the CC BY-SA 4.0 licence. The soundtrack is stripped before sampling.",
     },
 ]
 
@@ -46,6 +53,22 @@ def run(command: list[str]) -> str:
     return completed.stdout.strip()
 
 
+def sha1(path: Path) -> str:
+    digest = hashlib.sha1()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def probe_audio(path: Path) -> bool:
+    result = run([
+        "ffprobe", "-v", "error", "-select_streams", "a",
+        "-show_entries", "stream=codec_type", "-of", "csv=p=0", str(path)
+    ])
+    return bool(result.strip())
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-dir", required=True)
@@ -55,53 +78,53 @@ def main() -> None:
     manifest = []
 
     for source in SOURCES:
-        metadata_text = run([
-            sys.executable, "-m", "yt_dlp", "--no-warnings", "--no-playlist",
-            "--dump-single-json", source["url"]
-        ])
-        metadata = json.loads(metadata_text)
-        description = (metadata.get("description") or "").lower()
-        expected = source["required_description_text"].lower()
-        if expected not in description:
-            raise SystemExit(
-                f"Refusing {source['key']}: the expected visual licence declaration "
-                "was not found in the current creator description."
-            )
-
         target = output / source["key"]
         target.mkdir(parents=True, exist_ok=True)
+        raw = target / "source-original.webm"
+        clean = target / "reference-video-only.webm"
+
+        # yt-dlp is deliberately used on the direct Commons file, not on YouTube.
         run([
-            sys.executable, "-m", "yt_dlp", "--no-warnings", "--no-playlist",
-            "--format", "bv[height<=1080]/bv",
-            "--remux-video", "mp4",
-            "--output", str(target / "source.%(ext)s"),
-            source["url"],
+            sys.executable, "-m", "yt_dlp", "--force-generic-extractor",
+            "--no-warnings", "--no-playlist", "--no-progress",
+            "--output", str(raw), source["url"],
         ])
-        candidates = [p for p in target.glob("source.*") if p.suffix.lower() in {".mp4", ".mkv", ".webm", ".mov"}]
-        if not candidates:
-            raise SystemExit(f"No video-only download was produced for {source['key']}.")
-        video = candidates[0]
-        audio_streams = run([
-            "ffprobe", "-v", "error", "-select_streams", "a",
-            "-show_entries", "stream=codec_type", "-of", "csv=p=0", str(video)
+        if not raw.is_file() or raw.stat().st_size == 0:
+            raise SystemExit(f"yt-dlp did not produce the source file for {source['key']}.")
+
+        actual_sha1 = sha1(raw)
+        if actual_sha1.lower() != source["sha1"].lower():
+            raise SystemExit(
+                f"SHA-1 mismatch for {source['key']}: expected {source['sha1']}, got {actual_sha1}. "
+                "Refusing an unverified or changed source."
+            )
+
+        # Keep only the visual stream. The muxed source is deleted immediately.
+        run([
+            "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+            "-i", str(raw), "-map", "0:v:0", "-c:v", "copy", "-an",
+            str(clean),
         ])
-        if audio_streams:
-            raise SystemExit(f"Unexpected audio stream in {video}; deleting it and failing.")
-        (target / "creator-metadata.json").write_text(
-            json.dumps(metadata, indent=2), encoding="utf-8"
-        )
+        if probe_audio(clean):
+            clean.unlink(missing_ok=True)
+            raise SystemExit(f"Audio remains in video-only reference {clean}; refusing to continue.")
+        raw.unlink()
+
         manifest.append({
             **source,
-            "downloaded_file": str(video),
-            "video_only": True,
-            "audio_downloaded": False,
-            "license_description_verified": True,
+            "downloaded_file": str(clean),
+            "source_sha1_verified": actual_sha1,
+            "source_audio_stripped": True,
+            "video_only_reference_verified": True,
+            "original_muxed_file_deleted": True,
+            "reference_video_in_final_render": False,
         })
 
     (output / "reference-attribution.json").write_text(
         json.dumps(manifest, indent=2), encoding="utf-8"
     )
-    print("Verified and downloaded video-only Morevna reference files:")
+    print("Downloaded and hash-verified licensed Morevna references with yt-dlp.")
+    print("Source soundtracks were stripped before visual sampling.")
     for item in manifest:
         print(f"- {item['title']} — {item['visual_license']} — {item['downloaded_file']}")
 
