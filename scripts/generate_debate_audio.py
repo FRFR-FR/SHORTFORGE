@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate Liam/George/Eponine dialogue, speaker stems, timings and SRT.
 
-Liam: Kokoro am_liam. George/Eponine: Kyutai Pocket TTS voice prompts.
+Liam: Kokoro am_liam. George/Eponine: Kyutai Pocket TTS built-in catalogue voices.
 No substitute voice is silently selected. The script fails when a requested
 engine/voice is unavailable so the final mix can never mislabel a speaker.
 """
@@ -14,9 +14,9 @@ import soundfile as sf
 
 SAMPLE_RATE = 24000
 SPEAKERS = ("Liam", "George", "Eponine")
-POCKET_PROMPTS = {
-    "George": "hf://kyutai/tts-voices/vctk/p315_023_enhanced.wav",
-    "Eponine": "hf://kyutai/tts-voices/vctk/p262_023_enhanced.wav",
+POCKET_VOICES = {
+    "George": "george",
+    "Eponine": "eponine",
 }
 
 
@@ -54,8 +54,9 @@ def build_engines():
     kokoro = KPipeline(lang_code="a", device="cpu")
     pocket = TTSModel.load_model()
     pocket.to("cpu")
-    states = {speaker: pocket.get_state_for_audio_prompt(prompt)
-              for speaker, prompt in POCKET_PROMPTS.items()}
+    # Use native catalogue voices; custom audio prompts require gated voice-cloning weights.
+    states = {speaker: pocket.get_state_for_audio_prompt(voice_id)
+              for speaker, voice_id in POCKET_VOICES.items()}
     return kokoro, pocket, states
 
 
@@ -202,8 +203,8 @@ def main() -> None:
         "tempo_factor": round(tempo, 5), "outro_reserve_seconds": args.outro_reserve,
         "voice_mapping": {
             "Liam": "Kokoro-82M / am_liam",
-            "George": "Kyutai Pocket TTS / p315_023_enhanced",
-            "Eponine": "Kyutai Pocket TTS / p262_023_enhanced"
+            "George": "Kyutai Pocket TTS / george (built-in catalogue voice)",
+            "Eponine": "Kyutai Pocket TTS / eponine (built-in catalogue voice)"
         },
         "lines": timed_lines
     }

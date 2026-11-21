@@ -9,8 +9,8 @@
   "assets": {"male_avatar":"avatar-library/hero-male.blend","female_avatar":"avatar-library/hero-female.blend","source":"Quaternius Universal Base Characters Standard","license":"CC0-1.0"},
   "voices": {
     "Liam":{"engine":"Kokoro-82M","voice":"am_liam","role":"Host and evidence examiner"},
-    "George":{"engine":"Kyutai Pocket TTS","voice_prompt":"hf://kyutai/tts-voices/vctk/p315_023_enhanced.wav","role":"Open-source software maintainer"},
-    "Eponine":{"engine":"Kyutai Pocket TTS","voice_prompt":"hf://kyutai/tts-voices/vctk/p262_023_enhanced.wav","role":"Critical-infrastructure security lead"}
+    "George": {"engine":"Kyutai Pocket TTS","voice":"george","role":"Open-source software maintainer"},
+    "Eponine": {"engine":"Kyutai Pocket TTS","voice":"eponine","role":"Critical-infrastructure security lead"}
   },
   "locations":[
     {"id":"ops_center","name":"Network Operations Centre","palette":"midnight-blue / cool-cyan / amber"},

@@ -21,7 +21,7 @@ permissions:
   contents: write
 concurrency:
   group: shortforge-glasswing-debate
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   render:
     runs-on: ubuntu-24.04
