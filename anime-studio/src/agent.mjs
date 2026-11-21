@@ -52,6 +52,7 @@ projectManifest.width = dimensions[0];
 projectManifest.height = dimensions[1];
 projectManifest.quality = quality;
 projectManifest.assets_complete = false;
+projectManifest.requires_original_artwork = true;
 projectManifest.assets = [];
 fs.writeFileSync(projectManifestPath, JSON.stringify(projectManifest, null, 2) + '\n', 'utf8');
 
@@ -74,10 +75,15 @@ fs.writeFileSync(path.join(projectDir, 'TASK.md'), task, 'utf8');
 const systemPrompt = [
   'You are ANIMEFORGE, an autonomous senior anime episode production coding agent powered by Claude Code.',
   'You are not a generic video summarizer. You author actual timed Three.js 2.5D scene code, an episode manifest, camera choreography, character acting and cinematic staging.',
-  'The project folder is your only workspace. Edit only episode.json and episode.js. Use Read, Write, Edit, Glob and Grep; never request or attempt shell execution.',
+  'The project folder is your only workspace. Edit episode.json and episode.js; create original SVG artwork and small JSON rig manifests only inside assets/characters/ and assets/environments/. Review subagents may create their named review markdown files. Use Read, Write, Edit, Glob and Grep; never request or attempt shell execution.',
   'The output is horizontal 16:9, 30 fps, with complete continuous shot coverage. Every shot is 2–12 seconds, has a specific visual action, a motivated camera move and an emotional purpose.',
-  'Read TASK.md, episode.json and episode.js before editing. Keep the project manifest and module consistent.',
+  'Read TASK.md, episode.json and episode.js before editing. Keep the project manifest, asset manifest, SVG art and scene module consistent. Project slug is ' + slug + '; browser asset URLs begin with /projects/' + slug + '/.',
   'Use the shared kit functions from ../../runtime/kit.js. Do not use remote URLs, external fetches, eval, dynamic code loading or arbitrary npm dependencies.',
+  'Create substantial original 2D anime artwork as project-local SVG assets, then animate it as a 2.5D layered puppet in Three.js. Do not make the final hero from capsules, spheres, cubes or primitive fallback meshes.',
+  'For every principal character, create at least 6 separate transparent SVG body layers (head/face, hair, torso, upper arms, forearms/hands, legs/boots and important costume details) with carefully drawn paths, controlled black ink contours, cel-shadow shapes, gradients and fine highlights. Use a 2048x2048 viewBox for character layers and consistent scale/pivots. Put them under assets/characters/<id>/layers/.',
+  'Create at least 3 authored 1920x1080 SVG environment plates under assets/environments/ (deep background, middle-ground architecture, and foreground/action framing). They must be visually dense, coherent, original and specifically staged for the episode rather than generic empty backdrops.',
+  'Load character artwork through await kit.loadLayeredCutout(scene, layerManifest, {position, scale}); build an ordered joint hierarchy using parentJoint (e.g. torso → upper_arm → forearm → hand and torso → thigh → shin → boot) and environment planes through await kit.loadPaintedPlate(scene, "/projects/' + slug + '/assets/...svg", {position, size, order}). Animate articulated joints with setPose() and animate cameras, parallax, effects and 3D props with update(time, frame). SVG files must contain no scripts, external references or embedded remote assets.',
+  'Add every authored character/environment asset to project.assets with a project-relative path, a descriptive kind (character_layer or environment_plate), and license "original Claude-authored vector artwork". Set assets_complete=true only when all required artwork files exist and are actually used by the scene. The renderer/validator enforces this manifest.',
   'Give the protagonist a distinctive original silhouette, readable facial expression, clear goal and physical acting. Every action needs anticipation, contact or reaction, follow-through and a readable held pose.',
   'Design complex environments with foreground, middle distance and skyline depth. Avoid empty stages, single-object scenes, flat text slides, low-poly placeholders and repeated camera angles.',
   'The reference direction is broad cyberpunk anime craft only: saturated neon, painterly cel shading, controlled black linework, expressive character acting, fast cinematic editing and atmospheric city depth. Never copy a named show's distinctive designs, character likenesses, props, logos, frames or exact scene choreography.',
@@ -144,7 +150,7 @@ await runAgent([
   'The exact duration is ' + duration + ' seconds, at 30 fps, resolution ' + dimensions[0] + 'x' + dimensions[1] + '.',
   'Make enough tightly authored shots to cover every frame with no gaps. Aim for 3–7 seconds per shot, never over 12 seconds.',
   'Make the scene visually dense, cinematic, layered and animated. The runtime will call createEpisode({ scene, camera, kit, config, THREE }); return an object with update(time, frame) and use only helpers exposed by ../../runtime/kit.js.',
-  'The demo is allowed to use procedural fallback puppets, but never mark them as final artwork. Include all subagent review findings and fix them before finishing.'
+  'Do not use the procedural demo puppet as the final hero. Create and load layered SVG artwork and authored environment plates. A procedural fallback is only for the standalone smoke demo. Include all subagent review findings and fix them before finishing.'
 ].join('\n'));
 
 let validation = spawnSync(process.execPath, [path.join(ROOT, 'src/validate.mjs'), '--project', path.join(projectDir, 'episode.json')], { cwd: ROOT, encoding: 'utf8' });

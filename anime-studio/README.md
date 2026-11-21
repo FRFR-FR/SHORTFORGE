@@ -29,9 +29,11 @@ Install Node.js 22+, FFmpeg/ffprobe, then:
 
 Claude's official Agent SDK is used as the coding agent. It receives a project-local workspace, specialist subagents, and only file authoring / inspection tools. Shell execution is not granted to the model: trusted scripts validate and render the resulting project. The Agent SDK package is documented on npm as @anthropic-ai/claude-agent-sdk.
 
-The agent edits:
-- projects/<slug>/episode.json — episode spec, cast, timeline, shot intent and output profile.
+The agent authors:
+- projects/<slug>/episode.json — episode spec, cast, timeline, asset manifest and output profile.
 - projects/<slug>/episode.js — executable Three.js choreography using the shared ANIMEFORGE kit.
+- projects/<slug>/assets/characters/ — original SVG body layers and JSON rig manifests.
+- projects/<slug>/assets/environments/ — original deep background, middle-ground and foreground SVG plates.
 - projects/<slug>/TASK.md — the supplied creative brief and quality bar.
 
 After generation, validate and render:
@@ -58,7 +60,7 @@ ANIMEFORGE supports:
 4. Three-dimensional sets, props, vehicles, lighting and camera choreography.
 5. Procedural vector/toon puppets for smoke tests only.
 
-The included procedural city and puppet are a runnable engine demonstration, not a claim of finished studio-grade anime art. For final production, the art pack should contain high-resolution original character turnarounds, separated hair / face / torso / upper-arm / forearm / hand / thigh / shin / footwear layers or a properly rigged GLB, expression variants, and detailed environment plates. The validator distinguishes a technical render from an art-complete master; a master must declare its real character and environment assets rather than rely on the fallback puppet.
+The included procedural city and puppet are a runnable engine demonstration, not a claim of finished studio-grade anime art. The Claude agent is instructed to author original, transparent 2K SVG character layers plus three detailed 1920×1080 environment plates, record their provenance, and load them into the scene as a layered 2.5D rig. It is not allowed to pass a generated episode with only the fallback puppet. The validator checks the asset manifest and file presence; master renders additionally require the art-complete gate.
 
 ### Recommended folder layout
 

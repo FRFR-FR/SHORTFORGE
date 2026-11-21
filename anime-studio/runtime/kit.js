@@ -372,13 +372,15 @@ export function createRain(scene, options = {}) {
   const count = options.count ?? 900;
   const [width, depth, height] = options.area ?? [24, 12, 12];
   const positions = new Float32Array(count * 3);
+  const initial = new Float32Array(count * 3);
   const velocity = new Float32Array(count);
   for (let i = 0; i < count; i++) {
-    positions[i * 3] = (random() - 0.5) * width;
-    positions[i * 3 + 1] = (random() - 0.5) * depth;
-    positions[i * 3 + 2] = random() * height;
+    initial[i * 3] = (random() - 0.5) * width;
+    initial[i * 3 + 1] = (random() - 0.5) * depth;
+    initial[i * 3 + 2] = random() * height;
     velocity[i] = 8 + random() * 9;
   }
+  positions.set(initial);
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   const material = new THREE.PointsMaterial({
@@ -395,13 +397,10 @@ export function createRain(scene, options = {}) {
     update(time) {
       for (let i = 0; i < count; i++) {
         const index = i * 3;
-        positions[index + 1] -= 0.028;
-        positions[index + 2] -= velocity[i] / 30;
-        if (positions[index + 2] < -0.2) {
-          positions[index + 2] = height;
-          positions[index] = (random() - 0.5) * width;
-          positions[index + 1] = (random() - 0.5) * depth;
-        }
+        const z = (initial[index + 2] - velocity[i] * time) % height;
+        positions[index] = initial[index] + Math.sin(time * 1.7 + i) * 0.025;
+        positions[index + 1] = ((((initial[index + 1] - time * 0.84) + depth / 2) % depth) + depth) % depth - depth / 2;
+        positions[index + 2] = z < 0 ? z + height : z;
       }
       geometry.attributes.position.needsUpdate = true;
       points.rotation.y = Math.sin(time * 0.5) * 0.025;
@@ -453,6 +452,29 @@ export async function loadRiggedCharacter(scene, url, options = {}) {
   };
 }
 
+export async function loadPaintedPlate(scene, src, options = {}) {
+  if (typeof src !== 'string' || !src.startsWith('/projects/')) throw new Error('Environment plate must use a local /projects/ asset path');
+  const loader = new THREE.TextureLoader();
+  const texture = await loader.loadAsync(src);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const width = options.size?.[0] ?? 24;
+  const height = options.size?.[1] ?? 13.5;
+  const material = new THREE.MeshBasicMaterial({
+    map: texture,
+    transparent: options.transparent ?? true,
+    opacity: options.opacity ?? 1,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+    toneMapped: false
+  });
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, height), material);
+  mesh.rotation.x = Math.PI / 2;
+  mesh.position.set(...(options.position ?? [0, 12, 5]));
+  mesh.renderOrder = options.order ?? 1;
+  scene.add(mesh);
+  return mesh;
+}
+
 export async function loadLayeredCutout(scene, layerManifest, options = {}) {
   if (!Array.isArray(layerManifest) || layerManifest.length === 0) throw new Error('Layered cutout needs a non-empty layers array');
   const root = new THREE.Group();
@@ -466,6 +488,8 @@ export async function loadLayeredCutout(scene, layerManifest, options = {}) {
     const pivot = new THREE.Group();
     pivot.name = layer.joint ?? layer.id;
     pivot.position.set(...(layer.pivot ?? [0, 0, 0]));
+    const parent = layer.parentJoint ? joints.get(layer.parentJoint) : root;
+    if (!parent) throw new Error('Character layer parentJoint must appear before its child: ' + layer.parentJoint);
     const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, alphaTest: 0.02, side: THREE.DoubleSide, depthWrite: false });
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(...(layer.size ?? [1, 1])), material);
     mesh.rotation.x = Math.PI / 2; // Cutout faces the Y-negative camera.
@@ -473,7 +497,7 @@ export async function loadLayeredCutout(scene, layerManifest, options = {}) {
     mesh.rotation.z = layer.rotation ?? 0;
     mesh.renderOrder = layer.order ?? 10;
     pivot.add(mesh);
-    root.add(pivot);
+    parent.add(pivot);
     if (layer.joint) joints.set(layer.joint, pivot);
   }
   scene.add(root);
@@ -497,6 +521,7 @@ export const kit = {
   createRain,
   createSpeedLines,
   loadRiggedCharacter,
+  loadPaintedPlate,
   loadLayeredCutout,
   smoothStep,
   easeOutCubic

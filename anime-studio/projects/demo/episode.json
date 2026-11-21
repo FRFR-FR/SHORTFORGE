@@ -8,6 +8,7 @@
   "quality": "preview",
   "episode_module": "episode.js",
   "assets_complete": false,
+  "requires_original_artwork": false,
   "style": {
     "visual_identity": "Original high-energy 2.5D cyberpunk action anime with graphic silhouettes, expressive posing and layered painted depth.",
     "palette": ["#070b19", "#121b37", "#18e5ed", "#f400a8", "#ffb84a", "#f3e9f4"],

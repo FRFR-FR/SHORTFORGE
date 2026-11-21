@@ -1,6 +1,10 @@
 name: ANIMEFORGE episode
 
 on:
+  pull_request:
+    paths:
+      - "anime-studio/**"
+      - ".github/workflows/anime-episode.yml"
   workflow_dispatch:
     inputs:
       concept:

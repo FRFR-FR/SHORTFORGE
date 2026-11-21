@@ -105,7 +105,7 @@ const outputPath = path.resolve(option('--output', 'out/' + path.basename(projec
 if (!safeInside(ROOT, outputPath)) throw new Error('Output path must be inside anime-studio.');
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 
-const validate = spawnSync(process.execPath, [path.join(ROOT, 'src/validate.mjs'), '--project', projectPath], { cwd: ROOT, encoding: 'utf8' });
+const validate = spawnSync(process.execPath, [path.join(ROOT, 'src/validate.mjs'), '--project', projectPath, '--quality', quality], { cwd: ROOT, encoding: 'utf8' });
 if (validate.stdout) process.stdout.write(validate.stdout);
 if (validate.stderr) process.stderr.write(validate.stderr);
 if (validate.status !== 0) throw new Error('Episode validation failed before rendering.');

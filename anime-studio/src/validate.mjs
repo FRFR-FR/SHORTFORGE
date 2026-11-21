@@ -75,10 +75,14 @@ else {
 }
 
 const projectDir = path.dirname(projectPath);
+const requestedQuality = arg('--quality', project.quality || 'preview');
 if (project.assets_complete === true) {
   if (!Array.isArray(project.assets) || project.assets.length < 2) {
     fail('assets_complete=true requires a manifest with original character and environment assets.');
   } else {
+    let characterLayers = 0;
+    let characterModels = 0;
+    let environmentPlates = 0;
     for (const [index, asset] of project.assets.entries()) {
       if (!isObj(asset) || typeof asset.path !== 'string' || !asset.path || !asset.license || !asset.kind) {
         fail('assets[' + index + '] must include local path, kind and license/provenance.');
@@ -91,12 +95,25 @@ if (project.assets_complete === true) {
       const resolved = path.resolve(projectDir, asset.path);
       if (!resolved.startsWith(projectDir + path.sep) || !fs.existsSync(resolved) || !fs.statSync(resolved).isFile()) {
         fail('assets[' + index + '] does not point to an existing project-local file.');
+        continue;
+      }
+      if (asset.kind === 'character_layer') characterLayers++;
+      if (asset.kind === 'character_model') characterModels++;
+      if (asset.kind === 'environment_plate') environmentPlates++;
+      if (path.extname(asset.path).toLowerCase() === '.svg') {
+        const svg = fs.readFileSync(resolved, 'utf8');
+        if (/<script\b|<foreignObject\b|https?:\/\//i.test(svg)) fail('SVG asset contains executable or external references: ' + asset.path);
       }
     }
+    if (characterLayers < 6 && characterModels < 1) fail('assets_complete=true requires six original character layers or a complete rigged character model.');
+    if (environmentPlates < 3) fail('assets_complete=true requires background, middle-ground and foreground environment plates.');
   }
 }
-if (project.quality === 'master' && project.assets_complete !== true) {
-  fail('Master blocked: supply and verify original final character and environment artwork / rigs before marking assets_complete=true.');
+if (project.requires_original_artwork === true && project.assets_complete !== true) {
+  fail('Episode blocked: create and link original character artwork and three layered environment plates before rendering.');
+}
+if (requestedQuality === 'master' && project.assets_complete !== true) {
+  fail('Master blocked: supply and verify original character artwork and layered environment plates / rigs before marking assets_complete=true.');
 }
 if (errors.length) {
   console.error('ANIMEFORGE VALIDATION FAILED');

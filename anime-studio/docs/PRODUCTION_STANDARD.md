@@ -21,7 +21,7 @@ For each main character, provide a turnaround, face/expression sheet, colour key
 - a rigged GLB with a usable skeleton and named animation clips; or
 - separated transparent artwork for head/hair, torso, upper/lower arms, hands, upper/lower legs, feet and important accessories, with local pivot coordinates.
 
-Keep source layers at 2K–4K or better for 1080p masters. The art must be original and remain consistent between scenes. The fallback procedural puppet is only for engine validation.
+Keep source layers at 2K–4K or better for 1080p masters. The art must be original and remain consistent between scenes. The fallback procedural puppet is only for engine validation. Claude-authored original vector layers are the default episode art path; they must be detailed, transparent, consistently proportioned and rigged through named joints.
 
 ## Episode and shot design
 
