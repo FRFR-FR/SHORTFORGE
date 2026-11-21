@@ -71,10 +71,10 @@ jobs:
 
       - name: Publish separate hand-drawn LINEFORGE release
         env:
-          GH_TOKEN: \${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          TAG="lineforge-handdrawn-720p-\${GITHUB_RUN_NUMBER}"
+          TAG="lineforge-handdrawn-720p-${GITHUB_RUN_NUMBER}"
           gh release create "$TAG" \
             "$RUNNER_TEMP/lineforge-output/lineforge-handdrawn-720p.mp4" \
             "$RUNNER_TEMP/lineforge-output/lineforge-handdrawn.blend" \
@@ -82,6 +82,6 @@ jobs:
             "$RUNNER_TEMP/lineforge-output/lineforge-manifest.json" \
             "$RUNNER_TEMP/lineforge-output/lineforge-qa.json" \
             --target "$GITHUB_SHA" \
-            --title "LINEFORGE — hand-drawn 2.5D anime #\${GITHUB_RUN_NUMBER}" \
+            --title "LINEFORGE — hand-drawn 2.5D anime #${GITHUB_RUN_NUMBER}" \
             --notes "Original code-authored Grease Pencil character drawings in 3D space. 6 seconds, 1280x720, 30 fps. No character meshes, SVG cut-outs or raster character planes. See source .blend, stroke manifest and QA report." \
             --prerelease
