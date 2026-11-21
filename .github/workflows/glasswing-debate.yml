@@ -1,0 +1,148 @@
+name: SHORTFORGE — Explainer3D Project Glasswing Debate
+on:
+  push:
+    branches: [feature/explainer3d-debate]
+    paths:
+      - 'production/glasswing-debate/**'
+      - 'skills/explainer3d-debate/**'
+      - 'scripts/*debate*'
+      - 'src/blender/render_debate.py.gz.b64'
+      - 'requirements-debate-audio.txt'
+      - '.github/workflows/glasswing-debate.yml'
+  workflow_dispatch:
+    inputs:
+      publish_release:
+        description: Publish verified video as a GitHub Release
+        type: boolean
+        required: true
+        default: true
+permissions:
+  contents: write
+concurrency:
+  group: shortforge-glasswing-debate
+  cancel-in-progress: false
+jobs:
+  render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    env:
+      PYTHONUNBUFFERED: '1'
+      LIBGL_ALWAYS_SOFTWARE: '1'
+      MESA_GL_VERSION_OVERRIDE: '4.5'
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      PUBLISH_RELEASE: ${{ github.event_name == 'push' && 'true' || inputs.publish_release }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Materialize renderer and original skill files
+        run: |
+          set -euo pipefail
+          base64 -d src/blender/render_debate.py.gz.b64 | gzip -dc > src/blender/render_debate.py
+          base64 -d skills/explainer3d-debate/references/source-materials.tgz.b64 | tar -xz -f -
+          test -s skills/explainer3d-debate/references/ORIGINAL_SKILL.md
+          test -s skills/explainer3d-debate/references/SOURCE_STYLE_BIBLE.md
+      - name: Install system libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends curl xz-utils ffmpeg espeak-ng libsndfile1 libx11-6 libxext6 libxrender1 libxi6 libxfixes3 libxkbcommon0 libsm6 libice6 libgl1 libegl1 libgl1-mesa-dri libdbus-1-3 libgomp1 libopenal1 fonts-dejavu-core fonts-liberation
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: requirements-debate-audio.txt
+      - name: Install Blender 4.5.16
+        run: |
+          set -euo pipefail
+          mkdir -p .cache/blender-4.5.16
+          curl --fail --location --retry 5 --retry-delay 3 https://mirror.blender.org/release/Blender4.5/blender-4.5.16-linux-x64.tar.xz -o "$RUNNER_TEMP/blender.tar.xz"
+          tar -xJf "$RUNNER_TEMP/blender.tar.xz" -C .cache/blender-4.5.16 --strip-components=1
+          echo "BLENDER_BIN=$GITHUB_WORKSPACE/.cache/blender-4.5.16/blender" >> "$GITHUB_ENV"
+          .cache/blender-4.5.16/blender --version | head -n 2
+      - name: Install voice engines
+        run: |
+          python -m pip install --upgrade pip wheel
+          python -m pip install -r requirements-debate-audio.txt
+          python -c "import kokoro,pocket_tts,numpy,soundfile; print('Kokoro + Pocket TTS + audio dependencies ready')"
+      - name: Validate scripts and production contract
+        run: |
+          set -euo pipefail
+          python -m py_compile scripts/fetch_debate_assets.py scripts/generate_debate_audio.py src/blender/render_debate.py src/blender/avatar_system.py src/blender/build_avatar_library.py src/qa/analyze_frames.py
+          python - <<'PY'
+          import json,re
+          from pathlib import Path
+          d=json.loads(Path('production/glasswing-debate/dialogue.json').read_text())
+          p=json.loads(Path('production/glasswing-debate/project.json').read_text())
+          words=sum(len(re.findall(r"\b[\w’'-]+\b", x['text'])) for x in d['lines'])
+          assert p['duration_seconds']==300 and p['fps']==30 and (p['width'],p['height'])==(1280,720)
+          assert len(d['lines'])==28 and 600 <= words <= 800
+          assert {x['speaker'] for x in d['lines']}=={'Liam','George','Eponine'}
+          assert len(p['locations'])==7
+          print(f"PROJECT_VALID words={words} turns={len(d['lines'])} full_frames=9000")
+          PY
+      - name: Fetch rigged CC0 humanoids and build avatar library
+        run: |
+          set -euo pipefail
+          mkdir -p out/assets out/audio out/smoke/frames out/render/frames
+          python scripts/fetch_debate_assets.py --cache-dir .cache/shortforge-assets --output-manifest out/assets/asset-manifest.json
+          "$BLENDER_BIN" --background --python src/blender/build_avatar_library.py -- --male .cache/shortforge-assets/avatars/quaternius-male/Superhero_Male_FullBody.gltf --female .cache/shortforge-assets/avatars/quaternius-female/Superhero_Female_FullBody.gltf --output-dir out/assets/avatar-library
+      - name: Generate three requested voices and line timings
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          set -euo pipefail
+          python scripts/generate_debate_audio.py --dialogue production/glasswing-debate/dialogue.json --output-dir out/audio --duration 300 --fps 30
+          for f in dialogue.wav Liam.wav George.wav Eponine.wav dialogue.srt timings.json audio-report.json; do test -s "out/audio/$f"; done
+      - name: Ten-second landscape smoke render and QA gate
+        run: |
+          set -euo pipefail
+          "$BLENDER_BIN" --background --factory-startup --python src/blender/render_debate.py -- --project production/glasswing-debate/project.json --timings out/audio/timings.json --assets-dir out/assets --frames-dir out/smoke/frames --duration-seconds 10
+          python src/qa/analyze_frames.py --frames-dir out/smoke/frames --expected-frames 300 --width 1280 --height 720 --report out/smoke/qa-report.json --contact-sheet out/smoke/contact-sheet.jpg
+          python -c "import json; q=json.load(open('out/smoke/qa-report.json')); assert q['status']=='passed' and q['rendered_frames']==300, q; print('SMOKE_QA_PASSED')"
+      - name: Render full 300-second film and analyse every frame
+        run: |
+          set -euo pipefail
+          "$BLENDER_BIN" --background --factory-startup --python src/blender/render_debate.py -- --project production/glasswing-debate/project.json --timings out/audio/timings.json --assets-dir out/assets --frames-dir out/render/frames
+          python src/qa/analyze_frames.py --frames-dir out/render/frames --expected-frames 9000 --width 1280 --height 720 --report out/render/qa-report.json --contact-sheet out/render/contact-sheet.jpg
+          python -c "import json; q=json.load(open('out/render/qa-report.json')); assert q['status']=='passed' and q['rendered_frames']==9000, q; print('FRAME_QA_PASSED 9000/9000')"
+      - name: Encode and verify final MP4
+        run: |
+          set -euo pipefail
+          ffmpeg -hide_banner -y -framerate 30 -start_number 1 -i out/render/frames/frame_%06d.png -i out/audio/dialogue.wav -map 0:v:0 -map 1:a:0 -c:v libx264 -preset slow -crf 17 -pix_fmt yuv420p -r 30 -c:a aac -b:a 192k -ar 48000 -t 300 -movflags +faststart out/render/glasswing-debate.mp4
+          ffprobe -v error -count_frames -select_streams v:0 -show_entries stream=codec_name,width,height,r_frame_rate,nb_read_frames -show_entries format=duration -of json out/render/glasswing-debate.mp4 > out/render/ffprobe.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('out/render/ffprobe.json').read_text()); s=p['streams'][0]; d=float(p['format']['duration'])
+          assert (s['width'],s['height'])==(1280,720) and s['r_frame_rate']=='30/1' and int(s['nb_read_frames'])==9000 and abs(d-300)<0.15
+          assert Path('out/render/glasswing-debate.mp4').stat().st_size>10_000_000
+          print(f"FINAL_MP4_VERIFIED {d:.3f}s 1280x720 30fps 9000 frames")
+          PY
+      - name: Build render manifest
+        if: success()
+        run: |
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          timings=json.loads(Path('out/audio/timings.json').read_text())
+          p=json.loads(Path('out/render/ffprobe.json').read_text())
+          manifest={'episode':'glasswing-debate-001','duration_seconds':300,'resolution':[1280,720],'fps':30,'frames':9000,'ffprobe':p,'timings':timings,'frame_qa':json.loads(Path('out/render/qa-report.json').read_text()),'smoke_qa':json.loads(Path('out/smoke/qa-report.json').read_text()),'sha256':hashlib.sha256(Path('out/render/glasswing-debate.mp4').read_bytes()).hexdigest()}
+          Path('out/render/render-manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+          PY
+      - name: Publish verified MP4 and production files
+        if: success() && env.PUBLISH_RELEASE == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="glasswing-debate-$GITHUB_RUN_NUMBER-$GITHUB_RUN_ATTEMPT"
+          gh release create "$TAG" out/render/glasswing-debate.mp4 out/render/contact-sheet.jpg out/render/qa-report.json out/render/render-manifest.json out/render/ffprobe.json out/audio/dialogue.wav out/audio/Liam.wav out/audio/George.wav out/audio/Eponine.wav out/audio/dialogue.srt out/audio/timings.json out/audio/audio-report.json out/assets/asset-manifest.json production/glasswing-debate/SCRIPT.md production/glasswing-debate/FACT_CHECK.md --title "Did Claude Mythos Save the Internet? — Five-minute debate" --notes "Verified 1280x720, 30fps, 300 seconds, 3 requested voices, no background music."
+      - name: Write run summary
+        if: always()
+        run: |
+          {
+            echo '## Explainer3D Glasswing debate'
+            echo '- Target: 300 seconds / 1280x720 / 30fps / 9000 frames'
+            echo '- Voices: Liam / George / Eponine'
+            if [ -f out/smoke/qa-report.json ]; then cat out/smoke/qa-report.json; fi
+            if [ -f out/render/qa-report.json ]; then cat out/render/qa-report.json; fi
+            if [ -f out/render/render-manifest.json ]; then cat out/render/render-manifest.json; fi
+          } >> "$GITHUB_STEP_SUMMARY"
