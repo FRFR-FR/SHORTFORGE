@@ -1,0 +1,87 @@
+name: LINEFORGE hand-drawn 2.5D anime
+
+on:
+  push:
+    branches:
+      - feature/animeforge-2-5d-agent
+    paths:
+      - "anime-studio/lineforge/**"
+      - ".github/workflows/lineforge-anime.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  render-lineforge:
+    name: Install free tools, draw every frame, render and QA
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      LINEFORGE_FPS: "30"
+      LINEFORGE_SECONDS: "6"
+      LINEFORGE_WIDTH: "1280"
+      LINEFORGE_HEIGHT: "720"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Blender LTS, Krita, Tahoma2D and FFmpeg
+        run: |
+          sudo bash anime-studio/lineforge/install_free_tools.sh
+          blender --version | head -n 2
+          ffmpeg -version | head -n 1
+
+      - name: Validate Grease Pencil frame-drawing API
+        run: |
+          blender --background --factory-startup --python-expr "import bpy; assert bpy.app.version >= (4,5,0); assert hasattr(bpy.data, 'grease_pencils_v3'); print('Grease Pencil v3:', bpy.app.version_string)"
+
+      - name: Build the 3D city and redraw every character stroke on every frame
+        run: |
+          mkdir -p "$RUNNER_TEMP/lineforge-output"
+          blender --background --factory-startup --threads 4 \
+            --python-exit-code 1 \
+            --python anime-studio/lineforge/build_handdrawn.py -- \
+            --output-dir "$RUNNER_TEMP/lineforge-output"
+
+      - name: Encode the 720p review master
+        run: |
+          ffmpeg -hide_banner -y \
+            -framerate "$LINEFORGE_FPS" -start_number 1 \
+            -i "$RUNNER_TEMP/lineforge-output/frames/frame_%04d.png" \
+            -c:v libx264 -preset slow -crf 17 \
+            -pix_fmt yuv420p -r "$LINEFORGE_FPS" \
+            -color_primaries bt709 -color_trc bt709 -colorspace bt709 \
+            -movflags +faststart -an \
+            "$RUNNER_TEMP/lineforge-output/lineforge-handdrawn-720p.mp4"
+          ffprobe -v error -show_entries stream=codec_name,width,height,r_frame_rate \
+            -show_entries format=duration,size -of json \
+            "$RUNNER_TEMP/lineforge-output/lineforge-handdrawn-720p.mp4"
+
+      - name: Make contact sheet and enforce stroke-based QA
+        run: |
+          ffmpeg -hide_banner -y \
+            -i "$RUNNER_TEMP/lineforge-output/lineforge-handdrawn-720p.mp4" \
+            -vf "fps=1,scale=480:-1,tile=3x2" -frames:v 1 \
+            "$RUNNER_TEMP/lineforge-output/lineforge-contact-sheet.png"
+          python3 anime-studio/lineforge/qa.py \
+            --video "$RUNNER_TEMP/lineforge-output/lineforge-handdrawn-720p.mp4" \
+            --manifest "$RUNNER_TEMP/lineforge-output/lineforge-manifest.json" \
+            --report "$RUNNER_TEMP/lineforge-output/lineforge-qa.json"
+
+      - name: Publish separate hand-drawn LINEFORGE release
+        env:
+          GH_TOKEN: \${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="lineforge-handdrawn-720p-\${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" \
+            "$RUNNER_TEMP/lineforge-output/lineforge-handdrawn-720p.mp4" \
+            "$RUNNER_TEMP/lineforge-output/lineforge-handdrawn.blend" \
+            "$RUNNER_TEMP/lineforge-output/lineforge-contact-sheet.png" \
+            "$RUNNER_TEMP/lineforge-output/lineforge-manifest.json" \
+            "$RUNNER_TEMP/lineforge-output/lineforge-qa.json" \
+            --target "$GITHUB_SHA" \
+            --title "LINEFORGE — hand-drawn 2.5D anime #\${GITHUB_RUN_NUMBER}" \
+            --notes "Original code-authored Grease Pencil character drawings in 3D space. 6 seconds, 1280x720, 30 fps. No character meshes, SVG cut-outs or raster character planes. See source .blend, stroke manifest and QA report." \
+            --prerelease
