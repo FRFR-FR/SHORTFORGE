@@ -138,15 +138,16 @@ docs/                   Architecture, schema, research and review guides
 This repository package is a new implementation. Its local validation suite can be run with `python3 -m unittest discover -s tests -v`. A GitHub Actions render can only be verified after this project is pushed to a GitHub repository and the workflow is run there.
 
 
-## LINEFORGE — hand-drawn horizontal 2.5D anime
+## FULLBODY2D — fully rendered 2D anime characters
 
-The previous SVG cut-out character prototype has been retired. The new LINEFORGE path uses Blender Grease Pencil drawings authored stroke-by-stroke in 3D world space. Every output frame receives a new drawing containing individual character contours, facial lines, hair locks, garment folds, hatching, highlights and animated effects. The character is not a mesh, image plane, SVG puppet or assembled 2D body parts.
+The earlier line-only Grease Pencil / 3D-stage experiment has been superseded. The current target is a **2D production stage** with complete, fully rendered human characters and designed props. The 3D appearance must come from the artwork itself: volume-aware anatomy, foreshortening, layered forms, cel shadows, gradients, material highlights, reflected light and perspective.
 
-- Blender 4.5.16 LTS + Grease Pencil v3 is the primary renderer.
-- Krita and Tahoma2D are installed as free traditional 2D drawing / cleanup companions.
-- The city environment is real 3D geometry with 3D camera movement, perspective and lighting.
-- The first proof sequence targets horizontal 16:9, 720p, 30fps.
-- A strict QA report checks the Grease Pencil drawings and confirms that character mesh and cut-out asset counts are zero.
-- The release includes MP4, editable Blender scene, stroke manifest, QA report and contact sheet.
+- Complete characters: face, eyes, nose, mouth, hair locks, neck, torso, hands, fingers, legs, footwear and detailed costumes.
+- Designed props with shape, material, bevel highlights, cast shadows and perspective.
+- Fully illustrated 2D backgrounds, foreground/midground separation, atmosphere and camera drift.
+- No stick figures, outline-only people, 3D mesh stage, or primitive-only prop shortcuts.
+- Free toolchain: Krita, Tahoma2D / OpenToonz, Python + CairoSVG, FFmpeg and yt-dlp for licensed visual reference research.
+- Morevna Project anime references are downloaded video-only into temporary CI storage; creator licence declarations are checked, soundtrack audio is excluded, and source footage is never placed in the finished video.
+- CI target: 6-second, 1280×720, 30 fps review sample with two fully illustrated characters; automated QA checks anatomy metadata, frame count, motion, 2D stage and no audio.
 
-Read the [LINEFORGE production guide](anime-studio/README.md) and [stroke-by-stroke renderer](anime-studio/lineforge/build_handdrawn.py). GitHub Actions workflow: LINEFORGE hand-drawn 2.5D anime.
+Read the [FULLBODY2D production guide](anime-studio/fullbody2d/README.md), [2D character renderer](anime-studio/fullbody2d/render.py), and [yt-dlp reference downloader](anime-studio/fullbody2d/download_references.py). GitHub Actions workflow: **FULLBODY2D — fully rendered anime characters on a 2D stage**.
