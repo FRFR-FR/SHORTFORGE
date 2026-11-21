@@ -133,7 +133,7 @@ export async function auditRender({ framesDir, videoPath, outputDir, project, wi
     resolution: width + 'x' + height,
     codec: video?.codec_name ?? null,
     pixel_format: video?.pix_fmt ?? null,
-    frame_variance: { minimum: Number.isFinite(minVariance) ? Number(minVariance.toFixed(2)) : null, maximum: Number(maxVariance.toFixed(2)) : null },
+    frame_variance: { minimum: Number.isFinite(minVariance) ? Number(minVariance.toFixed(2)) : null, maximum: Number(maxVariance.toFixed(2)) },
     near_black_frames: veryDarkFrames,
     max_identical_frame_run: maxFrozenRun,
     contact_sheet: contactSheet,

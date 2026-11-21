@@ -9,7 +9,6 @@ function arg(name, fallback = undefined) {
   return i >= 0 && args[i + 1] ? args[i + 1] : fallback;
 }
 const projectPath = path.resolve(arg('--project', 'projects/demo/episode.json'));
-const projectDir = path.dirname(projectPath);
 const errors = [];
 const fail = (message) => errors.push(message);
 const isObj = (value) => value && typeof value === 'object' && !Array.isArray(value);
@@ -75,6 +74,7 @@ else {
   if (source.length < 1800) fail('episode module is too small; add purpose-built scene staging and timed animation');
 }
 
+const projectDir = path.dirname(projectPath);
 const requestedQuality = arg('--quality', project.quality || 'preview');
 if (project.assets_complete === true) {
   if (!Array.isArray(project.assets) || project.assets.length < 2) {

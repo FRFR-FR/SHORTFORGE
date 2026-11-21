@@ -29,3 +29,19 @@ test('demo episode module is valid JavaScript and uses the runtime kit', () => {
   assert.match(source, /export async function createEpisode/);
   assert.match(source, /createCyberpunkCity/);
 });
+
+test('all production JavaScript modules parse successfully', () => {
+  const modules = [
+    'src/agent.mjs',
+    'src/validate.mjs',
+    'src/render.mjs',
+    'src/qa.mjs',
+    'runtime/kit.js',
+    'runtime/main.js',
+    'projects/demo/episode.js'
+  ];
+  for (const module of modules) {
+    const result = spawnSync(process.execPath, ['--check', path.join(root, module)], { encoding: 'utf8' });
+    assert.equal(result.status, 0, module + ': ' + result.stderr);
+  }
+});
