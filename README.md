@@ -136,3 +136,18 @@ docs/                   Architecture, schema, research and review guides
 ## Status
 
 This repository package is a new implementation. Its local validation suite can be run with `python3 -m unittest discover -s tests -v`. A GitHub Actions render can only be verified after this project is pushed to a GitHub repository and the workflow is run there.
+
+
+## FULLBODY2D — fully rendered 2D anime characters
+
+The earlier line-only Grease Pencil / 3D-stage experiment has been superseded. The current target is a **2D production stage** with complete, fully rendered human characters and designed props. The 3D appearance must come from the artwork itself: volume-aware anatomy, foreshortening, layered forms, cel shadows, gradients, material highlights, reflected light and perspective.
+
+- Complete characters: face, eyes, nose, mouth, hair locks, neck, torso, hands, fingers, legs, footwear and detailed costumes.
+- Designed props with shape, material, bevel highlights, cast shadows and perspective.
+- Fully illustrated 2D backgrounds, foreground/midground separation, atmosphere and camera drift.
+- No stick figures, outline-only people, 3D mesh stage, or primitive-only prop shortcuts.
+- Free toolchain: Krita, Tahoma2D / OpenToonz, Python + CairoSVG, FFmpeg and yt-dlp for licensed visual reference research.
+- Morevna Project anime and illustrated-animation references are downloaded with yt-dlp from direct Creative Commons file URLs into temporary CI storage; their muxed audio is stripped and original downloads deleted before visual sampling. Only abstract palette/contrast measurements inform original art; no footage, frames, characters or sound enter the finished video.
+- CI target: 6-second, 1280×720, 30 fps review sample with two fully illustrated characters; automated QA checks anatomy metadata, frame count, motion, 2D stage and no audio.
+
+Read the [FULLBODY2D production guide](anime-studio/fullbody2d/README.md), [2D character renderer](anime-studio/fullbody2d/render.py), and [yt-dlp reference downloader](anime-studio/fullbody2d/download_references.py). GitHub Actions workflow: **FULLBODY2D — fully rendered anime characters on a 2D stage**.

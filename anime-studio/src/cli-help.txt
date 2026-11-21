@@ -1,0 +1,15 @@
+ANIMEFORGE COMMANDS
+
+Create an original episode with Claude:
+  npm run agent -- "concept" --slug my-episode --duration 60 --quality preview
+
+Create and immediately render:
+  npm run agent -- "concept" --slug my-episode --duration 60 --quality preview --render
+
+Validate:
+  npm run validate -- --project projects/my-episode/episode.json
+
+Render:
+  npm run render -- --project projects/my-episode/episode.json --quality master --output out/my-episode.mp4
+
+Profiles: smoke=640x360, preview=1280x720, master=1920x1080. All profiles render at the project's fps.

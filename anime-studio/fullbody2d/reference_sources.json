@@ -1,0 +1,26 @@
+[
+  {
+    "key": "morevna-episode-3",
+    "title": "Morevna Episode 3.0.2 (English)",
+    "creator": "Morevna Project",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Morevna_Episode_3.0.2_(English).webm",
+    "originalCreatorPage": "https://morevnaproject.org/anime/episode-3/",
+    "directVideo": "https://upload.wikimedia.org/wikipedia/commons/a/a7/Morevna_Episode_3.0.2_%28English%29.webm",
+    "statedLicense": "CC BY-SA 4.0 (creator's original statement; kept as the conservative project rule)",
+    "attribution": "Animation by Morevna Project",
+    "knownSha1": "9eb7961b8cfa7e48b47163a99590ab5677ea248a",
+    "purpose": "Study full character design, cel-shaded volume, costume design, cinematic staging and animated action."
+  },
+  {
+    "key": "peppercarrot-episode-6",
+    "title": "Pepper & Carrot Motion Comic — Episode 6: The Potion Contest",
+    "creator": "Morevna Project; Gregoire Lourme; David Revoy",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Morevna_Project_-_Pepper%26Carrot_(animated_comic)_-_Episode_6_-_The_Potion_Contest.webm",
+    "originalCreatorPage": "https://morevnaproject.org/pepper-and-carrot/episode-6/",
+    "directVideo": "https://upload.wikimedia.org/wikipedia/commons/7/79/Morevna_Project_-_Pepper%26Carrot_%28animated_comic%29_-_Episode_6_-_The_Potion_Contest.webm",
+    "statedLicense": "CC BY-SA 4.0",
+    "attribution": "Animation: Morevna Project; Illustrations: David Revoy; music by Gregoire Lourme is excluded from this research use.",
+    "knownSha1": "165c1cfbbfc5983e1cbdfc93fcf3b8f5a8d258d0",
+    "purpose": "Study illustrated 2D character/prop design, color grouping, readable silhouettes and graphic composition."
+  }
+]
