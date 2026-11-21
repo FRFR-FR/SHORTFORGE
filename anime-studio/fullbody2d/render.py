@@ -17,6 +17,7 @@ import cairosvg
 
 WIDTH, HEIGHT, FPS, SECONDS = 1280, 720, 30, 6
 FRAMES = FPS * SECONDS
+REFERENCE_ACCENTS = ["#3fe3f0", "#ff5598"]
 
 
 def clamp(v: float, lo: float = 0.0, hi: float = 1.0) -> float:
@@ -133,13 +134,14 @@ def definitions() -> str:
 
 def background(t: float) -> str:
     drift = 7.0 * math.sin(t * 0.45)
+    accent_a, accent_b = REFERENCE_ACCENTS[:2]
     windows = []
     for row in range(7):
         for col in range(10):
             x = 26 + col * 126 + (row % 2) * 29
             y = 80 + row * 54
             lit = (row * 7 + col * 11) % 6 in (0, 2)
-            color = "#3fe3f0" if (row + col) % 3 else "#ff5598"
+            color = accent_a if (row + col) % 3 else accent_b
             windows.append(
                 f'<rect x="{x}" y="{y}" width="28" height="18" rx="2" '
                 f'fill="{color if lit else "#17223a"}" opacity="{0.6 if lit else 0.42}"/>'
@@ -175,13 +177,13 @@ def background(t: float) -> str:
       <g transform="translate(90 292)">
         <rect x="0" y="0" width="200" height="112" rx="7" fill="#0a1224" stroke="#3b6b82" stroke-width="4"/>
         <rect x="12" y="12" width="176" height="88" rx="3" fill="#102d45"/>
-        <path d="M25 25 H173 M25 42 H151 M25 59 H163 M25 76 H125" stroke="#51d6e5" stroke-width="3" opacity=".62"/>
+        <path d="M25 25 H173 M25 42 H151 M25 59 H163 M25 76 H125" stroke="{accent_a}" stroke-width="3" opacity=".62"/>
         <circle cx="164" cy="82" r="8" fill="#ff5c9c"/>
       </g>
       <g transform="translate(1015 258)">
         <rect x="0" y="0" width="180" height="142" rx="8" fill="#10172b" stroke="#b53d75" stroke-width="4"/>
         <rect x="13" y="13" width="154" height="116" rx="4" fill="#1b2540"/>
-        <path d="M30 34 H150 M30 54 H128 M30 74 H150 M30 94 H103" stroke="#f07aae" stroke-width="4" opacity=".75"/>
+        <path d="M30 34 H150 M30 54 H128 M30 74 H150 M30 94 H103" stroke="{accent_b}" stroke-width="4" opacity=".75"/>
       </g>
     </g>
     <path d="M0 385 L1280 385 V720 H0Z" fill="url(#road)"/>
@@ -193,9 +195,9 @@ def background(t: float) -> str:
       <path d="M210 405 L0 720 M1060 405 L1280 720"/>
     </g>
     <g opacity=".62">
-      <path d="M470 460 Q640 442 820 460" stroke="#36ddeb" stroke-width="7" fill="none" filter="url(#softGlow)"/>
-      <path d="M870 510 Q1000 500 1160 520" stroke="#f04b90" stroke-width="9" fill="none" filter="url(#softGlow)"/>
-      <path d="M0 590 Q180 563 342 586" stroke="#46d9e7" stroke-width="4" fill="none"/>
+      <path d="M470 460 Q640 442 820 460" stroke="{accent_a}" stroke-width="7" fill="none" filter="url(#softGlow)"/>
+      <path d="M870 510 Q1000 500 1160 520" stroke="{accent_b}" stroke-width="9" fill="none" filter="url(#softGlow)"/>
+      <path d="M0 590 Q180 563 342 586" stroke="{accent_a}" stroke-width="4" fill="none"/>
     </g>
     <g opacity=".8">
       <path d="M0 679 Q180 664 330 684 T690 684 T1020 673 T1280 681" stroke="#30475e" stroke-width="3" fill="none"/>
@@ -785,7 +787,7 @@ def frame_svg(frame: int) -> str:
     </svg>"""
 
 
-def render(output_dir: Path) -> dict:
+def render(output_dir: Path, style_guide: dict | None = None) -> dict:
     frames_dir = output_dir / "frames"
     frames_dir.mkdir(parents=True, exist_ok=True)
     for frame in range(1, FRAMES + 1):
@@ -809,6 +811,12 @@ def render(output_dir: Path) -> dict:
         "resolution": [WIDTH, HEIGHT],
         "audio": "none",
         "reference_video_frames_in_final_output": False,
+        "reference_style_guide": {
+            "accent_colors": REFERENCE_ACCENTS,
+            "derived_from_licensed_reference_contact_sheets": bool(style_guide),
+            "method": (style_guide or {}).get("method", "default palette"),
+            "source_frames_used_for_palette": (style_guide or {}).get("source_frames_used", 0),
+        },
         "character_count": 2,
         "characters": [
             {"name": "foreground swordswoman", "design": "original adult anime-style full-body human, complete face, hair, costume, hands, legs and boots"},
@@ -846,10 +854,20 @@ def render(output_dir: Path) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-dir", required=True)
+    parser.add_argument("--reference-style-guide")
     args = parser.parse_args()
     out = Path(args.output_dir).resolve()
     out.mkdir(parents=True, exist_ok=True)
-    render(out)
+    style_guide = {}
+    if args.reference_style_guide:
+        guide_path = Path(args.reference_style_guide)
+        style_guide = json.loads(guide_path.read_text(encoding="utf-8"))
+        accents = style_guide.get("accent_colors", [])
+        valid = [value for value in accents if isinstance(value, str) and len(value) == 7
+                 and value.startswith("#") and all(ch in "0123456789abcdefABCDEF" for ch in value[1:])]
+        if len(valid) >= 2:
+            REFERENCE_ACCENTS = valid[:2]
+    render(out, style_guide)
     print(f"Rendered {FRAMES} full-colour 2D frames to {out}")
 
 
