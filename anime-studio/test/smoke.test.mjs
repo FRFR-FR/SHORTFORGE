@@ -27,7 +27,9 @@ test('demo episode module is valid JavaScript and uses the runtime kit', () => {
   assert.equal(result.status, 0, result.stderr);
   const source = fs.readFileSync(modulePath, 'utf8');
   assert.match(source, /export async function createEpisode/);
-  assert.match(source, /createCyberpunkCity/);
+  assert.match(source, /loadLayeredCutout/);
+  assert.match(source, /makeDrone/);
+  assert.match(source, /NEON VEIL/);
 });
 
 test('all production JavaScript modules parse successfully', () => {

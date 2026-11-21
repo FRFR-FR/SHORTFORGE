@@ -1,6 +1,6 @@
-# ANIMEFORGE — Claude Agent + Three.js 2.5D Anime Studio
+# ANIMEFORGE — Assistant-authored + Claude-optional Three.js 2.5D Anime Studio
 
-ANIMEFORGE is a dedicated horizontal-anime production system inside SHORTFORGE. It does not replace the existing Blender-based vertical Shorts pipeline.
+ANIMEFORGE is a dedicated horizontal-anime production system inside SHORTFORGE. It does not replace the existing Blender-based vertical Shorts pipeline. The included **NEON VEIL — Run the Last Light** sequence is authored directly in Three.js and original SVG art by the assistant; its animation and rendering do not call Claude or require an Anthropic API key. The Claude Agent SDK remains an optional coding route for future user-generated episode briefs, not a dependency of this authored sequence.
 
 ## Production target
 

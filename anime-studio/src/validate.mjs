@@ -102,7 +102,7 @@ if (project.assets_complete === true) {
       if (asset.kind === 'environment_plate') environmentPlates++;
       if (path.extname(asset.path).toLowerCase() === '.svg') {
         const svg = fs.readFileSync(resolved, 'utf8');
-        if (/<script\b|<foreignObject\b|https?:\/\//i.test(svg)) fail('SVG asset contains executable or external references: ' + asset.path);
+        if (/<script\b|<foreignObject\b|(?:href|xlink:href)=["']https?:\/\//i.test(svg) || /url\(\s*["']?https?:\/\//i.test(svg)) fail('SVG asset contains executable or external references: ' + asset.path);
       }
     }
     if (characterLayers < 6 && characterModels < 1) fail('assets_complete=true requires six original character layers or a complete rigged character model.');

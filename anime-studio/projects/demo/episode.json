@@ -1,39 +1,58 @@
 {
-  "title": "Glass Rain — ANIMEFORGE Engine Demonstration",
-  "description": "An original courier races across a neon megacity while an energy blade ignites above the rain-soaked street.",
-  "duration_seconds": 10,
+  "title": "NEON VEIL — Run the Last Light",
+  "description": "Rin Voss races through a rain-drenched megacity, hunted by a corporate sentinel. She ignites a photon blade and cuts a path through the neon night.",
+  "duration_seconds": 15,
   "fps": 30,
   "width": 1280,
   "height": 720,
   "quality": "preview",
   "episode_module": "episode.js",
-  "assets_complete": false,
+  "assets_complete": true,
   "requires_original_artwork": false,
   "style": {
-    "visual_identity": "Original high-energy 2.5D cyberpunk action anime with graphic silhouettes, expressive posing and layered painted depth.",
-    "palette": ["#070b19", "#121b37", "#18e5ed", "#f400a8", "#ffb84a", "#f3e9f4"],
-    "lighting": "Hard magenta/cyan edge lights, warm practicals, deep ink shadows and restrained bloom.",
-    "linework": "Bold clean silhouette outlines, cel-shaded planes, fine facial details and controlled graphic highlights.",
-    "camera": "Wide cinematic 16:9 lens, foreground occlusion, motivated trucking, push-ins and depth parallax.",
-    "motion": "Anticipation, readable key poses, arcs, overlapping hair/clothing, impact holds and directional speed lines."
+    "visual_identity": "Original premium cyberpunk action anime in 2.5D, with expressive cel-shaded cutout characters, hand-inked outlines, deep parallax city plates and graphic neon lighting.",
+    "palette": ["#050817", "#121b31", "#273650", "#3df1ed", "#ff42b0", "#ffd5de", "#e5ad69"],
+    "lighting": "Rainy night, cyan rim lights from the street, magenta security scan, warm moon haze, emissive signage, bloom and reflective roadway accents.",
+    "linework": "Bold dark anime contours, carefully layered cel shadows, thin specular accents, graphic silhouette separation and restrained bloom.",
+    "camera": "Horizontal widescreen cinematic framing with wide establishing view, tracking move, aggressive push-in, controlled impact shake and final hero hold.",
+    "motion": "Anticipation, overlapping scarf and hair, two-segment limb articulation, readable sprint cycles, skid recoil, blade ignition, airborne attack and follow-through."
   },
   "characters": [
     {
-      "id": "ari",
-      "name": "Ari Venn",
-      "design_notes": "Original young adult courier with short swept-back dark hair, a single teal hair streak, graphite flight jacket and amber visor. No recognizable franchise design."
+      "id": "rin-voss",
+      "name": "Rin Voss",
+      "design_notes": "Original young adult street courier with swept dark blue-black hair, vivid cyan streak, expressive amber-shadowed eyes, graphite armored jacket with teal and magenta accents, segmented boots and a long magenta scarf. Entire costume and face are original."
     },
     {
-      "id": "wraith",
-      "name": "Wraith Drone",
-      "design_notes": "Original hovering security machine with a compact angular silhouette, one hot-pink optic and articulated stabilizer fins."
+      "id": "sentinel",
+      "name": "Sentinel-09",
+      "design_notes": "Original hovering corporate hunter drone with a dark metallic chassis, magenta optic, rotating twin scan rings, swept stabilizer fins and a cone-shaped scan emitter."
     }
   ],
-  "shots": [
-    {"start": 0, "duration": 2.5, "action": "Ari sprints through a rain-soaked neon avenue as traffic streaks behind.", "camera": "low tracking wide shot, foreground signs parallax past lens", "emotional_beat": "urgent determination"},
-    {"start": 2.5, "duration": 2.5, "action": "A Wraith drone drops into frame and scans the avenue with a sharp magenta beam.", "camera": "fast tilt-up into a compressed medium shot", "emotional_beat": "sudden threat"},
-    {"start": 5, "duration": 2.5, "action": "Ari plants a foot, twists the torso and ignites a cyan energy blade.", "camera": "three-quarter orbit with a tight impact push", "emotional_beat": "defiant resolve"},
-    {"start": 7.5, "duration": 2.5, "action": "Ari launches forward; rain and neon reflections burst outward in a freeze-frame finish.", "camera": "accelerating dolly, then a sharp held hero composition", "emotional_beat": "explosive release"}
+  "assets": [
+    {"path":"assets/characters/rin/head.svg","kind":"character_layer","license":"original assistant-authored vector artwork"},
+    {"path":"assets/characters/rin/torso.svg","kind":"character_layer","license":"original assistant-authored vector artwork"},
+    {"path":"assets/characters/rin/arm-l-upper.svg","kind":"character_layer","license":"original assistant-authored vector artwork"},
+    {"path":"assets/characters/rin/arm-l-fore.svg","kind":"character_layer","license":"original assistant-authored vector artwork"},
+    {"path":"assets/characters/rin/arm-r-upper.svg","kind":"character_layer","license":"original assistant-authored vector artwork"},
+    {"path":"assets/characters/rin/arm-r-fore.svg","kind":"character_layer","license":"original assistant-authored vector artwork"},
+    {"path":"assets/characters/rin/leg-l-upper.svg","kind":"character_layer","license":"original assistant-authored vector artwork"},
+    {"path":"assets/characters/rin/leg-l-shin.svg","kind":"character_layer","license":"original assistant-authored vector artwork"},
+    {"path":"assets/characters/rin/leg-r-upper.svg","kind":"character_layer","license":"original assistant-authored vector artwork"},
+    {"path":"assets/characters/rin/leg-r-shin.svg","kind":"character_layer","license":"original assistant-authored vector artwork"},
+    {"path":"assets/characters/rin/scarf.svg","kind":"character_layer","license":"original assistant-authored vector artwork"},
+    {"path":"assets/characters/rin/blade.svg","kind":"character_layer","license":"original assistant-authored vector artwork"},
+    {"path":"assets/environments/background.svg","kind":"environment_plate","license":"original assistant-authored vector artwork"},
+    {"path":"assets/environments/midground.svg","kind":"environment_plate","license":"original assistant-authored vector artwork"},
+    {"path":"assets/environments/foreground.svg","kind":"environment_plate","license":"original assistant-authored vector artwork"}
   ],
-  "audio": {"music": false, "narration": false, "dialogue": []}
+  "shots": [
+    {"start":0,"duration":2.5,"action":"Rin sprints into a towering rain-soaked avenue; the camera tracks beside her as traffic slices through the distant skyline.","camera":"wide low tracking shot with strong layered parallax","emotional_beat":"urgent escape"},
+    {"start":2.5,"duration":2.5,"action":"Sentinel-09 drops from the overpass, its twin rings spin up and a magenta search beam sweeps the street.","camera":"tilt-up and compress into a threatening over-shoulder angle","emotional_beat":"the hunter finds her"},
+    {"start":5,"duration":2.5,"action":"Rin plants her boot, skids across wet pavement and reaches behind her shoulder for the photon blade.","camera":"medium three-quarter push-in with a short impact shake","emotional_beat":"decision under pressure"},
+    {"start":7.5,"duration":2.5,"action":"The cyan blade ignites, throwing bright reflections across her face, jacket and the rain.","camera":"tight hero push-in with a slight orbit","emotional_beat":"defiant resolve"},
+    {"start":10,"duration":2.5,"action":"Rin launches upward through the scan beam, scarf and jacket trailing as she swings the blade in a rising arc.","camera":"fast lateral dolly and upward follow","emotional_beat":"explosive counterattack"},
+    {"start":12.5,"duration":2.5,"action":"A crescent slash cuts across frame; the drone staggers in a burst of sparks and Rin lands in a strong final pose.","camera":"impact shake into a composed wide hero hold","emotional_beat":"release and triumph"}
+  ],
+  "audio": {"music":false,"narration":false,"dialogue":[]}
 }

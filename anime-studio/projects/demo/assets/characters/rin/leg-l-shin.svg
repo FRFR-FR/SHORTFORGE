@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 530" width="2048" height="2048"><defs>
+<linearGradient id="hair" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#607590"/><stop offset=".25" stop-color="#273650"/><stop offset=".63" stop-color="#10182b"/><stop offset="1" stop-color="#050a16"/></linearGradient>
+<linearGradient id="skin" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#ffe7dc"/><stop offset=".4" stop-color="#e8b0a7"/><stop offset=".78" stop-color="#ba7180"/><stop offset="1" stop-color="#6c3b58"/></linearGradient>
+<linearGradient id="coat" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#53617c"/><stop offset=".3" stop-color="#293550"/><stop offset=".68" stop-color="#121b31"/><stop offset="1" stop-color="#070c19"/></linearGradient>
+<linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f4ffff"/><stop offset=".25" stop-color="#aab9d0"/><stop offset=".55" stop-color="#384863"/><stop offset=".82" stop-color="#15223a"/><stop offset="1" stop-color="#d4e5f7"/></linearGradient>
+<linearGradient id="cyan" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#e6ffff"/><stop offset=".35" stop-color="#4df4f1"/><stop offset="1" stop-color="#087fb8"/></linearGradient>
+<linearGradient id="pink" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffd6f1"/><stop offset=".4" stop-color="#ff4eae"/><stop offset="1" stop-color="#8b155f"/></linearGradient>
+<filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="7"/></filter>
+<filter id="shade" x="-30%" y="-30%" width="160%" height="180%"><feGaussianBlur stdDeviation="8"/></filter>
+</defs>
+<path d="M67 20 L203 20 L194 312 L227 401 L206 486 L63 486 L43 401 L78 312Z" fill="#17223a" stroke="#050916" stroke-width="20"/>
+<path d="M91 31 L181 31 L170 301 L195 385 L87 385 L110 304Z" fill="url(#metal)"/>
+<path d="M81 118 L188 118 L180 173 L88 173Z" fill="#1a2740" stroke="#060c1b" stroke-width="8"/>
+<path d="M87 204 L176 204" stroke="#31eff0" stroke-width="12"/><path d="M93 234 L170 234 L160 315 L101 315Z" fill="#121b31"/>
+<path d="M79 338 L198 338 L224 415 L209 469 L63 469 L48 413Z" fill="#0c1428" stroke="#050a17" stroke-width="16"/>
+<path d="M66 390 L213 390 L210 422 L58 422Z" fill="url(#cyan)"/>
+<path d="M54 458 Q139 442 218 458 L243 500 L36 500Z" fill="#26334d" stroke="#050916" stroke-width="16"/>
+<path d="M66 484 L214 484" stroke="#f043ac" stroke-width="9"/><circle cx="139" cy="73" r="8" fill="#fff"/></svg>

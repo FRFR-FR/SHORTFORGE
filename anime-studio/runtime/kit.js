@@ -479,6 +479,9 @@ export async function loadLayeredCutout(scene, layerManifest, options = {}) {
   if (!Array.isArray(layerManifest) || layerManifest.length === 0) throw new Error('Layered cutout needs a non-empty layers array');
   const root = new THREE.Group();
   root.position.set(...(options.position ?? [0, 0, 0]));
+  if (typeof options.scale === 'number') root.scale.setScalar(options.scale);
+  else if (Array.isArray(options.scale)) root.scale.set(...options.scale);
+  if (Array.isArray(options.rotation)) root.rotation.set(...options.rotation);
   const joints = new Map();
   const loader = new THREE.TextureLoader();
   for (const layer of layerManifest) {
@@ -494,6 +497,8 @@ export async function loadLayeredCutout(scene, layerManifest, options = {}) {
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(...(layer.size ?? [1, 1])), material);
     mesh.rotation.x = Math.PI / 2; // Cutout faces the Y-negative camera.
     mesh.position.set(...(layer.offset ?? [0, 0, 0]));
+    if (typeof layer.scale === 'number') mesh.scale.setScalar(layer.scale);
+    else if (Array.isArray(layer.scale)) mesh.scale.set(...layer.scale);
     mesh.rotation.z = layer.rotation ?? 0;
     mesh.renderOrder = layer.order ?? 10;
     pivot.add(mesh);
