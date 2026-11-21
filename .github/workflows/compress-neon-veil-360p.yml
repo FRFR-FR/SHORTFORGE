@@ -1,0 +1,59 @@
+name: Compress NEON VEIL to 360p
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/animeforge-2-5d-agent
+    paths:
+      - .github/workflows/compress-neon-veil-360p.yml
+
+permissions:
+  contents: write
+
+jobs:
+  compress:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Download the original 720p master
+        run: |
+          mkdir -p out
+          curl -fL \
+            "https://github.com/FRFR-FR/SHORTFORGE/releases/download/animeforge-neon-veil-preview-8/neon-veil-preview.mp4" \
+            -o out/neon-veil-original-720p.mp4
+
+      - name: Create heavily compressed 360p copy
+        run: |
+          ffmpeg -hide_banner -y \
+            -i out/neon-veil-original-720p.mp4 \
+            -vf "scale=640:360:flags=lanczos,fps=30" \
+            -c:v libx264 -preset slow -profile:v baseline -level 3.0 \
+            -b:v 220k -maxrate 260k -bufsize 520k \
+            -pix_fmt yuv420p -an -movflags +faststart \
+            out/neon-veil-360p-compressed.mp4
+
+      - name: Verify output size and format
+        run: |
+          ffprobe -v error -select_streams v:0 \
+            -show_entries stream=width,height,r_frame_rate,codec_name \
+            -of default=noprint_wrappers=1 out/neon-veil-360p-compressed.mp4
+          test "$(ffprobe -v error -select_streams v:0 -show_entries stream=width -of csv=p=0 out/neon-veil-360p-compressed.mp4)" = "640"
+          test "$(ffprobe -v error -select_streams v:0 -show_entries stream=height -of csv=p=0 out/neon-veil-360p-compressed.mp4)" = "360"
+          ls -lh out/neon-veil-360p-compressed.mp4
+          sha256sum out/neon-veil-360p-compressed.mp4
+
+      - name: Publish compressed copy as a separate release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "animeforge-neon-veil-360p-8" \
+            out/neon-veil-360p-compressed.mp4 \
+            --title "NEON VEIL — heavily compressed 360p copy" \
+            --notes "Separate compressed 640x360 / 30 fps copy of the 720p master. The original 720p release remains unchanged." \
+            --prerelease \
+            --target "$GITHUB_SHA"
