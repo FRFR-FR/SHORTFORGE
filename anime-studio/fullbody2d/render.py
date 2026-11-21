@@ -852,6 +852,7 @@ def render(output_dir: Path, style_guide: dict | None = None) -> dict:
 
 
 def main() -> None:
+    global REFERENCE_ACCENTS
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-dir", required=True)
     parser.add_argument("--reference-style-guide")
