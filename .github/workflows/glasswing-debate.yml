@@ -1,4 +1,5 @@
 name: SHORTFORGE — Explainer3D Project Glasswing Debate
+# Re-run on repaired skill-source materialization.
 on:
   push:
     branches: [feature/explainer3d-debate]
