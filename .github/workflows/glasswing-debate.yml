@@ -62,7 +62,7 @@ jobs:
       - name: Install voice engines
         run: |
           python -m pip install --upgrade pip wheel
-          python -m pip install -r requirements-debate-audio.txt
+          python -m pip install -r requirements-debate-audio.txt pillow
           python -c "import kokoro,pocket_tts,numpy,soundfile; print('Kokoro + Pocket TTS + audio dependencies ready')"
       - name: Validate scripts and production contract
         run: |
@@ -93,12 +93,6 @@ jobs:
           set -euo pipefail
           python scripts/generate_debate_audio.py --dialogue production/glasswing-debate/dialogue.json --output-dir out/audio --duration 300 --fps 30
           for f in dialogue.wav Liam.wav George.wav Eponine.wav dialogue.srt timings.json audio-report.json; do test -s "out/audio/$f"; done
-      - name: Ten-second landscape smoke render and QA gate
-        run: |
-          set -euo pipefail
-          "$BLENDER_BIN" --background --factory-startup --python src/blender/render_debate.py -- --project production/glasswing-debate/project.json --timings out/audio/timings.json --assets-dir out/assets --frames-dir out/smoke/frames --duration-seconds 10
-          python src/qa/analyze_frames.py --frames-dir out/smoke/frames --expected-frames 300 --width 1280 --height 720 --report out/smoke/qa-report.json --contact-sheet out/smoke/contact-sheet.jpg
-          python -c "import json; q=json.load(open('out/smoke/qa-report.json')); assert q['status']=='passed' and q['rendered_frames']==300, q; print('SMOKE_QA_PASSED')"
       - name: Render full 300-second film and analyse every frame
         run: |
           set -euo pipefail
